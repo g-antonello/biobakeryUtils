@@ -1,0 +1,52 @@
+#' Download and incorporate a cleaned mpa tree version into a Tree Summarized Experiment
+#'
+#' The function supports the "UNCLASSIFIED" reads option by adding a fake 
+#' tip to the root with distance = 1
+#'
+#' @param data.tse \code{TreeSummarizedExperiment} object without a `rowTree`
+#' @param CHOCOPhlAn_version \code{character} that specifies with tree should be 
+#' downloaded. supported so far: 202403 (default) and 202307. See other timestamps in http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/
+#'
+#' @importFrom ape read.tree keep.tip
+#' @importFrom TreeTools AddTip
+#'
+#' @returns A \code{TreeSummarizedExperiment} now including a `rowTree`
+#' @export
+#'
+#' @examples
+#' 
+
+AddPhyloTree_to_mpa_tse <- function(data.tse, CHOCOPhlAn_version = "202403"){
+  
+  trees_available <- c("mpa_vJan25_CHOCOPhlAnSGB_202503.nwk", "mpa_vJun23_CHOCOPhlAnSGB_202403.nwk", "mpa_vJun23_CHOCOPhlAnSGB_202307.nwk")
+  
+  wanted_tree <- trees_available[grepl(CHOCOPhlAn_version, trees_available)]
+  
+  if(isFALSE(wanted_tree)){
+      stop(paste("timestamps supported are: ", paste(timestamps_available, collapse = ", ")))
+  }
+  
+  mpa.tre <- ape::read.tree(paste0("http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/", trees_available[grepl(CHOCOPhlAn_version, trees_available)]))
+  #' rename tips as SGBs. Referring to Aitor's note in the following biobakery
+  #' topic: https://forum.biobakery.org/t/inquiry-regarding-metaphlan-sgbs-phylogenetic-tree/4442/3
+  
+  # rename tips with relevant names
+  tree_basic$tip.label <- paste0("t__SGB", tree_basic$tip.label)
+  # add UNCLASSIFIED if necessary
+  
+  if("UNCLASSIFIED" %in% rownames(data.tse)){
+    tree_basic <- TreeTools::AddTip(tree_basic, label = "UNCLASSIFIED", where = 0)
+  }
+  
+  # subset tree only with wanted tips
+  relevant_tips <- intersect(tree_basic$tip.label, rownames(data.tse))
+  tree_subset <- ape::keep.tip(tree_basic, relevant_tips)
+  
+  # add tree to the TreeSummarizedExperiment object
+  
+  rowTree(data.tse) <- tree_subset
+  
+  return(data.tse)
+}
+
+
