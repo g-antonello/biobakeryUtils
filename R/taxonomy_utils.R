@@ -96,7 +96,7 @@ rownames_tse <- function(data.tse, new.rownames){
   }
 
   rownames(data.tse) <- new.rownames
-  data.tse@rowTree$tip.label <- new.rownames
+  rowTree(data.tse)$tip.label <- new.rownames
   
   return(data.tse)
 }
