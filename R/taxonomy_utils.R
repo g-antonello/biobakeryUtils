@@ -16,7 +16,7 @@
 #'
 #' @examples
 
-.expand_taxonomy <- function(taxonomy.chr, sep = "|", row.names = "short"){
+expand_taxonomy <- function(taxonomy.chr, sep = "|", row.names = "short"){
   taxonomy.list <- strsplit(taxonomy.chr, sep, fixed = TRUE)
   taxonomy.df <- as.data.frame(Reduce(rbind, taxonomy.list))
   taxonomies_per_column <- apply(taxonomy.df, 2, function(x) unique(substr(x[!grepl("^UN*", x)], 1, 3)))
@@ -50,7 +50,7 @@
   return(taxonomy.df)
 }
 
-#' Transform taxonomy table into character of full taxonomies
+#' Taxonomy from data.frame to vector
 #'
 #' @param taxonomy.df \code{data.frame} with taxonomic levels on columns and individual taxa on rows. Taxa levels must be ordered from Kingdom/Domain to make sense, but the function does not check that
 #' @param sep \code{character} specifying the separator avoid `c("_", "-", " ", ",", "\t")` separators, because they will likely be present in the taxonomy table already or because it would conflict with saving the taxonomy table in .csv or .tsv format
@@ -60,7 +60,7 @@
 #'
 #' @examples
 
-.collapse_taxonomy <- function(taxonomy.df, sep = "|"){
+collapse_taxonomy <- function(taxonomy.df, sep = "|"){
   
   invalidSeps <- c("_", "-", " ", ",", "\t")
   
@@ -72,15 +72,45 @@
   
 }
 
-.mia_rename_taxa <- function(data.tse, new_rownames){
-  #' IMPORTANT! Make sure the order of old and new row names makes sense
-  #' before running this function
+#' Enhanced row renaming in a TreeSummarizedExperiment 
+#' 
+#' This includes renaming not only rows of a TSE, but renames tree tips as well
+#'
+#' @param data.tse \code{(Tree)SummarizedExperiment} with or without a phylogenetic tree
+#' @param new.rownames = A \code{character} vector of new rownames. IMPORTANT! Make sure the order of old and new row names makes sense before running this function
+#'
+#' @returns
+#' @export
+#'
+#' @examples
+
+rownames_tse <- function(data.tse, new.rownames){
   
-  data.tse <- .reorder_taxa_with_phyloTree_labels(data.tse)
-  rownames(data.tse) <- new_rownames
+  if(!identical(rownames(data.tse), rowTree(data.tse)$tip.label)){
+    stop("Your .tse object does not have identical rownames and tip names in identical order. Consider running `reorder_taxa_with_phyloTree_labels` first")
+  }
+  
+  if((class(data.tse) != "TreeSummarizedExperiment") | is.null(rowTree(data.tse))){
+    rownames(data.tse) <- new.rownames
+    return(data.tse)
+  }
+
+  rownames(data.tse) <- new.rownames
+  data.tse@rowTree$tip.label <- new.rownames
+  
+  return(data.tse)
 }
 
-.reorder_taxa_with_phyloTree_labels <- function(data.tse) {
+#' Reorder rows and tip labels of a TreeSummarizedExperiment
+#'
+#' @param data.tse \code{TreeSummarizedExperiment} object. It must contain a phylogenetic tree
+#'
+#' @returns \code{TreeSummarizedExperiment} object with identical rownames and tip labels order
+#' @export
+#'
+#' @examples
+
+reorder_taxa_with_phyloTree_labels <- function(data.tse) {
   
   if(is.null(rowTree(data.tse))){
     stop("No phyloTree to reorder taxa with")

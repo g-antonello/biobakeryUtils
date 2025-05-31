@@ -27,26 +27,28 @@ AddPhyloTree_to_mpa_tse <- function(data.tse, CHOCOPhlAn_version = "202403"){
   }
   
   mpa.tre <- ape::read.tree(paste0("http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/", trees_available[grepl(CHOCOPhlAn_version, trees_available)]))
-  #' rename tips as SGBs. Referring to Aitor's note in the following biobakery
+  
+  #' rename tips as SGBs. Referring to Aitor Blanco's note in the following biobakery
   #' topic: https://forum.biobakery.org/t/inquiry-regarding-metaphlan-sgbs-phylogenetic-tree/4442/3
+  mpa.tre$tip.label <- paste0("t__SGB", mpa.tre$tip.label)
   
-  # rename tips with relevant names
-  tree_basic$tip.label <- paste0("t__SGB", tree_basic$tip.label)
   # add UNCLASSIFIED if necessary
-  
   if("UNCLASSIFIED" %in% rownames(data.tse)){
-    tree_basic <- TreeTools::AddTip(tree_basic, label = "UNCLASSIFIED", where = 0)
+    mpa.tre <- AddTip(mpa.tre, label = "UNCLASSIFIED", where = 0)
   }
   
   # subset tree only with wanted tips
-  relevant_tips <- intersect(tree_basic$tip.label, rownames(data.tse))
-  tree_subset <- ape::keep.tip(tree_basic, relevant_tips)
+  relevant_tips <- intersect(mpa.tre$tip.label, rownames(data.tse))
+  tree_subset <- ape::keep.tip(mpa.tre, relevant_tips)
+  
+  #' maybe not necessary:reorder the TreeSummarized experiment based on tip 
+  #' labels order
+  data_reordered.tse <- data.tse[tree_subset$tip.label,]
   
   # add tree to the TreeSummarizedExperiment object
   
-  rowTree(data.tse) <- tree_subset
+  rowTree(data_reordered.tse) <- tree_subset
   
-  return(data.tse)
+  return(data_reordered.tse)
 }
-
 
