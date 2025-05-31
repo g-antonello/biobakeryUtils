@@ -84,7 +84,7 @@ collapse_taxonomy <- function(taxonomy.df, sep = "|"){
 #'
 #' @examples
 
-rownames_tse <- function(data.tse, new.rownames){
+rename_rownames.tse <- function(data.tse, new.rownames){
   
   if(!identical(rownames(data.tse), rowTree(data.tse)$tip.label)){
     stop("Your .tse object does not have identical rownames and tip names in identical order. Consider running `reorder_taxa_with_phyloTree_labels` first")
