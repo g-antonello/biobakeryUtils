@@ -68,7 +68,7 @@ collapse_taxonomy <- function(taxonomy.df, sep = "|"){
     warning(paste0("Please avoid this separator: ", sep))
   }
   
-  return(apply(as.data.frame(rowData(project4_reordered.tse)), 1, function(x) paste(x, collapse = "|")))
+  return(apply(taxonomy.df, 1, function(x) paste(x, collapse = "|")))
   
 }
 
