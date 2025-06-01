@@ -17,7 +17,7 @@
 #' 
 
 AddPhyloTree_to_mpa_tse <- function(data.tse, CHOCOPhlAn_version = "202403"){
-  if(!is.null(data.tse)){
+  if(!is.null(rowTree(data.tse))){
     message("Tree already present, returning untouched input")
     return(data.tse)
   }
