@@ -17,7 +17,10 @@
 #' 
 
 AddPhyloTree_to_mpa_tse <- function(data.tse, CHOCOPhlAn_version = "202403"){
-  
+  if(!is.null(data.tse)){
+    message("Tree already present, returning untouched input")
+    return(data.tse)
+  }
   trees_available <- c("mpa_vJan25_CHOCOPhlAnSGB_202503.nwk", "mpa_vJun23_CHOCOPhlAnSGB_202403.nwk", "mpa_vJun23_CHOCOPhlAnSGB_202307.nwk")
   
   wanted_tree <- trees_available[grepl(CHOCOPhlAn_version, trees_available)]
