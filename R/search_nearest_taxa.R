@@ -10,6 +10,7 @@
 #' @param taxonomy_sep \code{character} specifying the separation character used
 #' in the tree's tip labels. Default is "|"
 #'
+#' @importFrom ape cophenetic.phylo
 #' @returns
 #' @export
 #'
