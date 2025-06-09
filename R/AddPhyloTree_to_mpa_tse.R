@@ -16,20 +16,21 @@
 #' @examples
 #' 
 
-AddPhyloTree_to_mpa_tse <- function(data.tse, CHOCOPhlAn_version = "202403"){
+AddPhyloTree_to_mpa_tse <- function(data.tse, CHOCOPhlAn_version = "latest"){
   if(!is.null(rowTree(data.tse))){
     message("Tree already present, returning untouched input")
     return(data.tse)
   }
-  trees_available <- c("mpa_vJan25_CHOCOPhlAnSGB_202503.nwk", "mpa_vJun23_CHOCOPhlAnSGB_202403.nwk", "mpa_vJun23_CHOCOPhlAnSGB_202307.nwk")
   
-  wanted_tree <- trees_available[grepl(CHOCOPhlAn_version, trees_available)]
+  trees_available <- c("latest" = "mpa_vJan25_CHOCOPhlAnSGB_202503.nwk", "202503" = "mpa_vJan25_CHOCOPhlAnSGB_202503.nwk", "202403" = "mpa_vJun23_CHOCOPhlAnSGB_202403.nwk", "202307" = "mpa_vJun23_CHOCOPhlAnSGB_202307.nwk")
+  
+  wanted_tree <- trees_available[CHOCOPhlAn_version]
   
   if(isFALSE(wanted_tree)){
       stop(paste("timestamps supported are: ", paste(timestamps_available, collapse = ", ")))
   }
   
-  mpa.tre <- ape::read.tree(paste0("http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/", trees_available[grepl(CHOCOPhlAn_version, trees_available)]))
+  mpa.tre <- ape::read.tree(paste0("http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/", wanted_tree))
   
   #' rename tips as SGBs. Referring to Aitor Blanco's note in the following biobakery
   #' topic: https://forum.biobakery.org/t/inquiry-regarding-metaphlan-sgbs-phylogenetic-tree/4442/3
