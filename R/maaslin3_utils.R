@@ -16,6 +16,8 @@
 #' for the prevalence results, with taxonomy in the first columns and maaslin3 
 #' results following. Taxa not tested are also included for completeness.
 #' 
+#' @importFrom dplyr full_join
+#' 
 #' @export
 #'
 #' @examples
@@ -60,7 +62,7 @@ add_taxonomy_to_maaslin3 <- function(maaslin3_res, input.tse, taxLevel = "Guess"
   results_w_taxonomy.list <- lapply(results.list, function(x) {
       
       return(
-        dplyr::full_join(taxonomy_info_subset, x, by = "feature") %>%
+        full_join(taxonomy_info_subset, x, by = "feature") %>%
           arrange(qval_individual))}
     )
   
@@ -71,10 +73,14 @@ add_taxonomy_to_maaslin3 <- function(maaslin3_res, input.tse, taxLevel = "Guess"
 
 #' Write curated maaslin3 output
 #'
+#' This is a quick function to save data that result from the previous function
+#' called `add_taxonomy_to_maaslin3`
+#' 
 #' @param maaslin3_res_list \code{list} of results as come out of 
 #' `add_taxonomy_to_maaslin3`
 #' @param out.dir \code{character} specifying where to save results
-#'
+#'  
+#' @importFrom readr write_tsv
 #' @returns NULL, nothing is returned. Files are save as .tsv
 #' @export
 #'
