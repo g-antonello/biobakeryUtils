@@ -62,7 +62,7 @@ add_taxonomy_to_maaslin3 <- function(maaslin3_res, input.tse, taxLevel = "Guess"
   results_w_taxonomy.list <- lapply(results.list, function(x) {
       
       return(
-        full_join(taxonomy_info_subset, x, by = "feature") %>%
+        dplyr::full_join(taxonomy_info_subset, x, by = "feature") %>%
           arrange(qval_individual))}
     )
   
