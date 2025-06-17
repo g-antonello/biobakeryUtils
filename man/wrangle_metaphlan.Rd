@@ -4,7 +4,12 @@
 \alias{wrangle_metaphlan}
 \title{wrangle a metaphlan profiles table}
 \usage{
-wrangle_metaphlan(mpa, taxonomic_lvl = "Species")
+wrangle_metaphlan(
+  mpa,
+  taxonomic_lvl = "Species",
+  row.names = "short",
+  sep = "|"
+)
 }
 \arguments{
 \item{mpa}{a Metaphlan matrix as a data frame as comes out after 
@@ -12,6 +17,14 @@ wrangle_metaphlan(mpa, taxonomic_lvl = "Species")
 
 \item{taxonomic_lvl}{\code{character} indicating the taxonomic level wanted. 
 Default is `Species`}
+
+\item{row.names}{\code{character} of length 1. Either `'short'`, `'long'`, or 
+`'none'`. Default is `'short'`, which returns the highest taxonomic 
+resolution the input without taxonomies above. This is passed to 
+`expand_taxonomy()`}
+
+\item{sep}{\code{character} Passed to `expand_taxonomy()` to specift the 
+taxonomy separator in the input character vector. Default is "|"}
 }
 \value{
 a \code{list containing both `profiles` and `taxonomies`}

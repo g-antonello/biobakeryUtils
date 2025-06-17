@@ -8,6 +8,7 @@
 #'
 #' @importFrom broom tidy
 #' @importFrom dplyr rename left_join transmute
+#' @importFrom S4Vectors metadata
 #' 
 #' @returns A \code{data.frame} with permanova and betadisper + permutest statistics
 #' ready to be reported or saved as tables.
@@ -40,10 +41,10 @@
 
 PERMANOVA_to_table <- function(tse, name = "permanova") {
   if (!all(names(metadata(tse)[[name]]) %in% c("permanova", "homogeneity"))) {
-    results_table.df <- broom::tidy(metadata(tse)[[name]])
+    results_table.df <- tidy(metadata(tse)[[name]])
   } else {
-    permanova.df <- suppressWarnings(broom::tidy(metadata(tse)[[name]][["permanova"]]))
-    permanova.df <- dplyr::rename(permanova.df, p.value_PERMANOVA = p.value)
+    permanova.df <- suppressWarnings(tidy(metadata(tse)[[name]][["permanova"]]))
+    permanova.df <- rename(permanova.df, p.value_PERMANOVA = p.value)
     
     tmp <- as.data.frame(metadata(tse)[[name]][["homogeneity"]])
     betadisper.df <- transmute(tmp,

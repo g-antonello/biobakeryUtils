@@ -16,9 +16,12 @@ complete_unknown_taxonomy(x, tax_lvl_int = 8)
 complete_unknown_taxonomy(x, tax_lvl_int = 8)
 }
 \arguments{
-\item{x}{\code{character},  the taxonomy as it appears in the first column of a metaphlan table}
+\item{x}{\code{character},  the taxonomy as it appears in the first column of
+a metaphlan table}
 
-\item{tax_lvl_int}{\code{character} the level at which the user wants the taxonomies aggregated. The default goes all the way to the SGB level (`8`). Species level is `7`, Genus is `6` and so on.}
+\item{tax_lvl_int}{\code{character} the level at which the user wants the 
+taxonomies aggregated. The default goes all the way to the SGB level (`8`).
+Species level is `7`, Genus is `6` and so on.}
 }
 \value{
 \code{character}, the same as the input vector, with the lowest 
@@ -40,10 +43,10 @@ Complete Unknown taxonomy
  
 This is a utility function for the `metaphlan_wrangle function`, which needs
 it in case it finds taxa that are unique at higher taxonomies levels than the 
-one requested (e.g. a Genus without any species mapped to it. maybe it is still 
-a valuable genus, so it has to be repeated with the same name at the taxonomic level below).
-This is also valuable because another approach would discard it, and the total
-relative abundances estimated would not add up.
+one requested (e.g. a Genus without any species mapped to it. maybe it is 
+still a valuable genus, so it has to be repeated with the same name at the 
+taxonomic level below). This is also valuable because another approach would
+discard it, and the total relative abundances estimated would not add up.
 }
 \examples{
 

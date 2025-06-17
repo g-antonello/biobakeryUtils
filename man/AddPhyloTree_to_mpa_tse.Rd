@@ -38,7 +38,7 @@ The function performs the following steps:
   \item Checks if `rowTree` is already present; if so, returns the input 
   unchanged.
   \item Downloads the specified CHOCOPhlAn tree version.
-  \item Renames tree tips to the format "t__SGB{tip_label}" as per Biobakery
+  \item Renames tree tips to the format "t__SGB<tip.label>" as per Biobakery
   community guidelines.
   \item Adds a tip labeled "UNCLASSIFIED" at the root if the dataset contains
   such reads.

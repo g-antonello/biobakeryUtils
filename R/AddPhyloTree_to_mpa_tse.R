@@ -22,7 +22,7 @@
 #'   \item Checks if `rowTree` is already present; if so, returns the input 
 #'   unchanged.
 #'   \item Downloads the specified CHOCOPhlAn tree version.
-#'   \item Renames tree tips to the format "t__SGB{tip_label}" as per Biobakery
+#'   \item Renames tree tips to the format "t__SGB<tip.label>" as per Biobakery
 #'   community guidelines.
 #'   \item Adds a tip labeled "UNCLASSIFIED" at the root if the dataset contains
 #'   such reads.
@@ -34,6 +34,7 @@
 #'
 #' @importFrom ape read.tree keep.tip
 #' @importFrom TreeTools AddTip
+#' @importFrom TreeSummarizedExperiment rowTree
 #' @export
 #'
 #' @examples
@@ -62,15 +63,15 @@ AddPhyloTree_to_mpa_tse <- function(data.tse, CHOCOPhlAn_version = "latest") {
     stop(paste("timestamps supported are: ", paste(names(trees_available), collapse = ", ")))
   }
   
-  mpa.tre <- ape::read.tree(paste0("http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/", wanted_tree))
+  mpa.tre <- read.tree(paste0("http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/", wanted_tree))
   mpa.tre$tip.label <- paste0("t__SGB", mpa.tre$tip.label)
   
   if("UNCLASSIFIED" %in% rownames(data.tse)) {
-    mpa.tre <- TreeTools::AddTip(mpa.tre, label = "UNCLASSIFIED", where = 0)
+    mpa.tre <- AddTip(mpa.tre, label = "UNCLASSIFIED", where = 0)
   }
   
   relevant_tips <- intersect(mpa.tre$tip.label, rownames(data.tse))
-  tree_subset <- ape::keep.tip(mpa.tre, relevant_tips)
+  tree_subset <- keep.tip(mpa.tre, relevant_tips)
   data_reordered.tse <- data.tse[tree_subset$tip.label,]
   rowTree(data_reordered.tse) <- tree_subset
   return(data_reordered.tse)

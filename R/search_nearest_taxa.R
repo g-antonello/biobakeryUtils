@@ -11,6 +11,7 @@
 #' in the tree's tip labels. Default is "|"
 #'
 #' @importFrom ape cophenetic.phylo
+#' @importFrom dplyr mutate arrange
 #' @returns \code{data.frame} with phylogenetically closest taxa based on the 
 #' input phylogenetic tree.
 #' 
@@ -44,12 +45,13 @@ search_nearest_taxa <- function(phyloTree, target_SGB, taxonomy_sep = "|"){
   # get only the comparisons against the target taxon
   all_dists_vs_target <- sort(ape_coph_distances[grepl(target_SGB, rownames(ape_coph_distances)),])
   
-  intermediate.df <- expand_taxonomy(names(all_dists_vs_target), sep = taxonomy_sep) %>% 
-  mutate(
+  intermediate.df <- expand_taxonomy(names(all_dists_vs_target), sep = taxonomy_sep)
+  
+  intermediate.df <- mutate(intermediate.df,
     phylo_dist = all_dists_vs_target,
     known_species = !grepl("GGB|SGB|_bacterium|UNCLASSIFIED", Species) | grepl("Isolate|isolate", Species)
-  ) %>% 
-    arrange(phylo_dist)
+  ) 
   
-  return(intermediate.df)
+  
+  return(arrange(intermediate.df, phylo_dist))
 }

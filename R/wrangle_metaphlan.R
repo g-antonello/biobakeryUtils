@@ -2,16 +2,19 @@
 #'  
 #' This is a utility function for the `metaphlan_wrangle function`, which needs
 #' it in case it finds taxa that are unique at higher taxonomies levels than the 
-#' one requested (e.g. a Genus without any species mapped to it. maybe it is still 
-#' a valuable genus, so it has to be repeated with the same name at the taxonomic level below).
-#' This is also valuable because another approach would discard it, and the total
-#' relative abundances estimated would not add up.
+#' one requested (e.g. a Genus without any species mapped to it. maybe it is 
+#' still a valuable genus, so it has to be repeated with the same name at the 
+#' taxonomic level below). This is also valuable because another approach would
+#' discard it, and the total relative abundances estimated would not add up.
 #' 
-#' @param x \code{character},  the taxonomy as it appears in the first column of a metaphlan table
-#' @param tax_lvl_int \code{character} the level at which the user wants the taxonomies aggregated. The default goes all the way to the SGB level (`8`). Species level is `7`, Genus is `6` and so on.
-#'
+#' @param x \code{character},  the taxonomy as it appears in the first column of
+#' a metaphlan table
+#' @param tax_lvl_int \code{character} the level at which the user wants the 
+#' taxonomies aggregated. The default goes all the way to the SGB level (`8`).
+#' Species level is `7`, Genus is `6` and so on.
 #' @return \code{character}, the same as the input vector, with the lowest taxonomy repeated down to the `tax_lvl_int` chosen
 #' @importFrom tidyr separate_wider_delim
+#' @importFrom dplyr select
 #' @export
 #'
 #' @examples
@@ -56,10 +59,16 @@ complete_unknown_taxonomy <- function(x, tax_lvl_int = 8){
 #' `merge_metaphlan.py`
 #' @param taxonomic_lvl \code{character} indicating the taxonomic level wanted. 
 #' Default is `Species`
-#'
+#' @param row.names \code{character} of length 1. Either `'short'`, `'long'`, or 
+#' `'none'`. Default is `'short'`, which returns the highest taxonomic 
+#' resolution the input without taxonomies above. This is passed to 
+#' `expand_taxonomy()`
+#' @param sep \code{character} Passed to `expand_taxonomy()` to specift the 
+#' taxonomy separator in the input character vector. Default is "|"
 #' @return a \code{list containing both `profiles` and `taxonomies`}
 #' @importFrom purrr transpose reduce
-#' @importFrom tidyr separate
+#' @importFrom tidyr separate_wider_delim 
+#' @importFrom dplyr select
 #' @export
 #'
 #' @examples
@@ -78,7 +87,7 @@ complete_unknown_taxonomy <- function(x, tax_lvl_int = 8){
 #' profiles$Species$taxonomies[1:5,]
 #' 
 
-wrangle_metaphlan <- function(mpa, taxonomic_lvl = "Species"){
+wrangle_metaphlan <- function(mpa, taxonomic_lvl = "Species", row.names = "short", sep = "|"){
   
   # the package imports all_taxonomy_levels, a named character vector
   
@@ -151,14 +160,7 @@ wrangle_metaphlan <- function(mpa, taxonomic_lvl = "Species"){
     )
   }
   
-  taxonomy.df <- separate(
-    select(mpa_refined["clade_name"], clade_name),
-    col = clade_name,
-    sep = "\\|",
-    into = all_taxonomy_levels[1:tax_lvl_int],
-    fill = "right"
-    )
-  rownames(taxonomy.df) <- taxonomy.df[[tax_lvl_int]]
+  taxonomy.df <- expand_taxonomy(mpa_refined$clade_name, row.names = row.names, sep = sep)
   
   # finish formatting mpa refined
   rownames(mpa_refined) <- sapply(strsplit(mpa_refined$clade_name, "\\|"), "[", tax_lvl_int)
