@@ -7,23 +7,33 @@
 wrangle_metaphlan(mpa, taxonomic_lvl = "Species")
 }
 \arguments{
-\item{mpa}{a Metaphlan matrix as a data frame}
+\item{mpa}{a Metaphlan matrix as a data frame as comes out after 
+`merge_metaphlan.py`}
 
-\item{taxonomic_lvl}{\code{character} indicating the taxonomic level wanted. Default is `Species`}
+\item{taxonomic_lvl}{\code{character} indicating the taxonomic level wanted. 
+Default is `Species`}
 }
 \value{
 a \code{list containing both `profiles` and `taxonomies`}
 }
 \description{
-wrangle a metaphlan profiles table
+Works really similarly to mia::importMetaphlan, the difference being that 
+this function starts from data already loaded in R. Also, it does not 
+handel ncbi_tax_id so well
 }
 \examples{
 
-data("metaphlanTestData")
-wrangled_metaphlans <- sapply(c("Kingdom", "Class","Species"),
-function(taxLvl)
-wrangle_metaphlan(metaphlanTestData, taxonomic_lvl = taxLvl), 
+wallen_profiles <- data.table::fread(system.file("extdata",
+                                                 "WallenZD_2022_metaphlan3_profiles.tsv.bz2",
+                                                 package = "biobakeryUtils"))
+
+
+profiles <- sapply(c("Phylum", "Genus", "Species"), function(taxLvl) {
+  wrangle_metaphlan(wallen_profiles, taxonomic_lvl = taxLvl)
+},
 USE.NAMES = TRUE, simplify = FALSE)
-replace original names with those that were gradually added going up the
-taxonomic tree
+
+profiles$Species$profiles[1:5,1:5]
+profiles$Species$taxonomies[1:5,]
+
 }

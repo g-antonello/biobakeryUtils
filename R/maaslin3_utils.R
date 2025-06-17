@@ -16,12 +16,36 @@
 #' for the prevalence results, with taxonomy in the first columns and maaslin3 
 #' results following. Taxa not tested are also included for completeness.
 #' 
-#' @importFrom dplyr full_join
+#' @importFrom dplyr full_join arrange
+#' @importFrom SummarizedExperiment rowData
 #' 
 #' @export
 #'
 #' @examples
 #' 
+#' library(maaslin3)
+#' WallenZD_2022.tse <- mia::importMetaPhlAn(
+#' file = system.file("extdata",
+#'                    "WallenZD_2022_metaphlan3_profiles.tsv.bz2",
+#'                    package = "biobakeryUtils"),
+#' col.data = system.file("extdata", "WallenZD_2022_subjMetadata.tsv.bz2", package = "biobakeryUtils"))
+#'
+#' maaslin3_results_raw <- maaslin3(
+#'   input_data = WallenZD_2022.tse, 
+#'   formula = ~ Case_status + Sex + Age_at_collection, 
+#'   transform = "LOG", 
+#'   output = tempdir(),
+#'   normalization = "TSS", # scale values per samples from 0 to 1
+#'   min_prevalence = 0.05, 
+#'   min_abundance = 0.001, 
+#'   standardize = FALSE, 
+#'   verbosity = "ERROR" 
+#' )
+#' 
+#' maaslin3_with_taxonomy <- add_taxonomy_to_maaslin3(maaslin3_res = maaslin3_results_raw, input.tse = WallenZD_2022.tse, taxLevel = "Guess")
+#' 
+#' head(maaslin3_with_taxonomy$abundance)
+
 
 add_taxonomy_to_maaslin3 <- function(maaslin3_res, input.tse, taxLevel = "Guess"){
   
@@ -33,37 +57,30 @@ add_taxonomy_to_maaslin3 <- function(maaslin3_res, input.tse, taxLevel = "Guess"
 
   # if taxLevel is not explicitly stated, guess it
   if(taxLevel == "Guess"){
-    all_possible_taxonomy_colnames <- c(
-      d__ = "Domain",
-      k__ = "Kingdom",
-      p__ = "Phylum",
-      c__ = "Class",
-      o__ = "Order",
-      f__ = "Family",
-      g__ = "Genus",
-      s__ = "Species",
-      t__ = "SGB"
-    )
     
-    prefix <- unique(grep(paste(names(all_possible_taxonomy_colnames), collapse = "|"),substr(results.list$abundance$feature, 1, 3), value = TRUE))
+    prefix <- unique(grep(paste(names(all_taxonomy_levels), collapse = "|"),substr(results.list$abundance$feature, 1, 3), value = TRUE))
    
     if(length(prefix) != 1){
       stop("Taxonomy is not guessable")
     }
-    taxLevel <- all_possible_taxonomy_colnames[prefix]
+    taxLevel <- all_taxonomy_levels[prefix]
   }
   
   # get taxonomic information up to the taxonomic level needed
     taxonomy_info <- as.data.frame(rowData(input.tse))
-    taxonomy_info_subset <- taxonomy_info[,1:which(colnames(taxonomy_info) == taxLevel)]
+    taxonomy_info_subset <- taxonomy_info[,1:which(agrepl(taxLevel, colnames(taxonomy_info)))]
     colnames(taxonomy_info_subset)[ncol(taxonomy_info_subset)] <- "feature"
     
   # merge results with taxonomy, keeping them split
   results_w_taxonomy.list <- lapply(results.list, function(x) {
       
       return(
-        dplyr::full_join(taxonomy_info_subset, x, by = "feature") %>%
-          arrange(qval_individual))}
+        arrange(
+          full_join(
+            taxonomy_info_subset, x, by = "feature"),
+          qval_individual)
+        )
+    }
     )
   
   return(results_w_taxonomy.list)
@@ -81,12 +98,41 @@ add_taxonomy_to_maaslin3 <- function(maaslin3_res, input.tse, taxLevel = "Guess"
 #' @param out.dir \code{character} specifying where to save results
 #'  
 #' @importFrom readr write_tsv
-#' @returns NULL, nothing is returned. Files are save as .tsv
+#' @returns NULL, nothing is returned. Files are save as 
+#' `all_results_w_taxonomy_abundance.tsv` and 
+#' `all_results_w_taxonomy_prevalence.tsv`
+#' 
 #' @export
 #'
 #' @examples
+#'
+#' library(maaslin3)
+#' WallenZD_2022.tse <- mia::importMetaPhlAn(
+#' file = system.file("extdata",
+#'                    "WallenZD_2022_metaphlan3_profiles.tsv.bz2",
+#'                    package = "biobakeryUtils"),
+#' col.data = system.file("extdata", "WallenZD_2022_subjMetadata.tsv.bz2", package = "biobakeryUtils"))
+#'
+#' maaslin3_results_raw <- maaslin3(
+#'   input_data = WallenZD_2022.tse, 
+#'   formula = ~ Case_status + Sex + Age_at_collection, 
+#'   transform = "LOG", 
+#'   output = tempdir(),
+#'   normalization = "TSS", # scale values per samples from 0 to 1
+#'   min_prevalence = 0.05, 
+#'   min_abundance = 0.001, 
+#'   standardize = FALSE, 
+#'   verbosity = "ERROR" 
+#' )
 #' 
+#' maaslin3_with_taxonomy <- add_taxonomy_to_maaslin3(maaslin3_res = maaslin3_results_raw, input.tse = WallenZD_2022.tse, taxLevel = "Guess")
 #' 
+#' head(maaslin3_with_taxonomy$abundance)
+#' head(maaslin3_with_taxonomy$prevalence)
+#' 
+#' write_maaslin3_curated_tables(maaslin3_with_taxonomy, tempdir())
+#' 
+#' list.files(tempdir(), pattern = "all_results_w_taxonomy*")
 
 write_maaslin3_curated_tables <- function(maaslin3_res_list, out.dir){
   

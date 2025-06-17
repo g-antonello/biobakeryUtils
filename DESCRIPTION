@@ -1,12 +1,30 @@
 Package: biobakeryUtils
 Type: Package
-Title: An R package for BioBakery data manipulation
-Version: 0.1.0
+Title: Manipulate and Analyze Data from the BioBakery Suite
+Version: 0.2.0
 Author: Giacomo Antonello
 Maintainer: Giacomo Antonello <giacomoantonello1@gmail.com>
-Description: This package is a collection of functions I need to manipulate data from the BioBakery suite. So far it doesn't do much, but it will soon have metaphlan and humann utilites to import and format data into R objects, such as phyloseq and, more importantly, TreeSummarizedExperiment objects".
-Depends: tidyverse (>= 1.3.2), phyloseq (>= 1.4.2), mia(>= 1.12.0), TreeSummarizedExperiment
-License: GNU GPL version 2
+Description: A collection of utility functions for importing, formatting, and 
+    manipulating data from the BioBakery suite, including tools for 
+    preparing data for use with 'phyloseq' and 'TreeSummarizedExperiment' 
+    objects.
+Depends: 
+    R (>= 4.0.1)
+Imports: 
+    TreeTools,
+    ape,
+    broom,
+    data.table (>= 1.15),
+    dplyr,
+    mia (>= 1.12.0),
+    purrr,
+    readr,
+    stringr,
+    tidyr,
+    maaslin3,
+    TreeSummarizedExperiment,
+    SummarizedExperiment
+License: GNU GPL version 2 + file LICENSE
 Encoding: UTF-8
 LazyData: true
 RoxygenNote: 7.3.2

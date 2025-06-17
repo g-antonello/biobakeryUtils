@@ -64,12 +64,19 @@ complete_unknown_taxonomy <- function(x, tax_lvl_int = 8){
 #'
 #' @examples
 #' 
-#' data("metaphlanTestData")
-#' wrangled_metaphlans <- sapply(c("Kingdom", "Class","Species"), 
-#'   function(taxLvl) {
-#'   wrangle_metaphlan(metaphlanTestData, taxonomic_lvl = taxLvl)
-#'   }, 
+#' wallen_profiles <- data.table::fread(system.file("extdata",
+#'                                                  "WallenZD_2022_metaphlan3_profiles.tsv.bz2",
+#'                                                  package = "biobakeryUtils"))
+#' 
+#' 
+#' profiles <- sapply(c("Phylum", "Genus", "Species"), function(taxLvl) {
+#'   wrangle_metaphlan(wallen_profiles, taxonomic_lvl = taxLvl)
+#' },
 #' USE.NAMES = TRUE, simplify = FALSE)
+#' 
+#' profiles$Species$profiles[1:5,1:5]
+#' profiles$Species$taxonomies[1:5,]
+#' 
 
 wrangle_metaphlan <- function(mpa, taxonomic_lvl = "Species"){
   
@@ -113,7 +120,7 @@ wrangle_metaphlan <- function(mpa, taxonomic_lvl = "Species"){
       
       selection_vec <- selection_vec | (mpa$clade_name == taxa_to_add)  
       # save iterations in a list that can be used later
-      taxa_added[[taxonomies[lvl - 1]]] <- taxa_to_add
+      taxa_added[[all_taxonomy_levels[lvl - 1]]] <- taxa_to_add
     }
     
   }
@@ -148,7 +155,7 @@ wrangle_metaphlan <- function(mpa, taxonomic_lvl = "Species"){
     select(mpa_refined["clade_name"], clade_name),
     col = clade_name,
     sep = "\\|",
-    into = taxonomies[1:tax_lvl_int],
+    into = all_taxonomy_levels[1:tax_lvl_int],
     fill = "right"
     )
   rownames(taxonomy.df) <- taxonomy.df[[tax_lvl_int]]

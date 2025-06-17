@@ -11,10 +11,27 @@
 #' in the tree's tip labels. Default is "|"
 #'
 #' @importFrom ape cophenetic.phylo
-#' @returns
+#' @returns \code{data.frame} with phylogenetically closest taxa based on the 
+#' input phylogenetic tree.
+#' 
 #' @export
 #'
 #' @examples
+#' \dontrun{
+#' WallenZD_2022.tse <- mia::importMetaPhlAn(
+#'  file = system.file("extdata",
+#'                    "WallenZD_2022_metaphlan3_profiles.tsv.bz2",
+#'                    package = "biobakeryUtils"),
+#'  col.data = system.file("extdata", "WallenZD_2022_subjMetadata.tsv.bz2", 
+#'  package = "biobakeryUtils")
+#'  )
+#'
+#' # does not work because WallenZD reported data at species level
+#' WallenZD_2022.tse <- AddPhyloTree_to_mpa_tse(
+#'   data.tse = WallenZD_2022.tse, 
+#'   CHOCOPhlAn_version = "202403"
+#'   )
+#' }
 
 search_nearest_taxa <- function(phyloTree, target_SGB, taxonomy_sep = "|"){
 
