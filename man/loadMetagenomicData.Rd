@@ -35,12 +35,12 @@ is_downloaded <- sapply(cached_profiles$cache_path, file.exists)
 
 table(is_downloaded)
 
-cache.df <- cached_profiles[is_downloaded,]
+cache_table <- cached_profiles[is_downloaded,]
 
 # this one fails with this subset of samples
-data.se <- loadMetagenomicData(cache.df)
+data.se <- loadMetagenomicData(cache_table)
 
 # this one does not fail
-data.tse <- loadMetagenomicData(cache.df)
+data.tse <- loadMetagenomicData(cache_table)
 }
 }

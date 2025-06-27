@@ -75,10 +75,10 @@ loadMetagenomicData <- function(cache_table){
   
   # read file as raw input 
   input_raw.tb <- read_tsv(files_to_read, skip = 4, progress = FALSE, id = "fileName") |>
-    # keep only columns we are interested in
-    dplyr::select(all_of(c(cols_to_keep, "uuid"))) |>
     # add uuid codes instead of cache
-    dplyr::mutate(uuid = names(files_to_read)[match(fileName, files_to_read)])
+    dplyr::mutate(uuid = names(files_to_read)[match(fileName, files_to_read)]) |>
+    # keep only columns we are interested in
+    dplyr::select(all_of(c(cols_to_keep, "uuid")))
     
   colnames(input_raw.tb) <- gsub("#", "", colnames(input_raw.tb), fixed = TRUE)
   
