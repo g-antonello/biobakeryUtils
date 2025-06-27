@@ -4,10 +4,10 @@
 \alias{loadMetagenomicData}
 \title{Rewriting of loadMetagenomicData in parkinsonsMetagenomicData}
 \usage{
-loadMetagenomicData(cache.df)
+loadMetagenomicData(cache_table)
 }
 \arguments{
-\item{cache.df}{\code{data.frame} containing local paths where data have been 
+\item{cache_table}{\code{data.frame} containing local paths where data have been 
 cached with `cacheMetagenomicData`}
 }
 \value{

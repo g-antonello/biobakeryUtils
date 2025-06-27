@@ -6,7 +6,7 @@
 #' have the right to write in its temporary directory. This code may not work in
 #' some cloud computing environments.
 #'
-#' @param cache.df \code{data.frame} containing local paths where data have been 
+#' @param cache_table \code{data.frame} containing local paths where data have been 
 #' cached with `cacheMetagenomicData`
 #'
 #' @returns A \code{TreeSummarizedExperiment} (without phylogenetic tree), as 
@@ -39,12 +39,12 @@
 #' data.tse <- loadMetagenomicData(cache.df)
 #' }
 
-loadMetagenomicData <- function(cache.df){
+loadMetagenomicData <- function(cache_table){
   
-  files_to_read <- cache.df$cache_path
-  names(files_to_read) <- cache.df$UUID
+  files_to_read <- cache_table$cache_path
+  names(files_to_read) <- cache_table$UUID
   
-  # read first 8 lines
+  # read first 8 lines of all files
   fileStats_headers <- lapply(files_to_read, function(filePath) readLines(filePath, 8))
   # extract metaphlan run information first N lines
   runInfo.list <- lapply(fileStats_headers, getMetaPhlAn_run_info)
@@ -75,9 +75,11 @@ loadMetagenomicData <- function(cache.df){
   
   # read file as raw input 
   input_raw.tb <- read_tsv(files_to_read, skip = 4, progress = FALSE, id = "fileName") |>
+    # keep only columns we are interested in
+    dplyr::select(all_of(c(cols_to_keep, "uuid"))) |>
     # add uuid codes instead of cache
-    dplyr::mutate(input_raw.tb, uuid = names(files_to_read)[match(fileName, files_to_read)]) |>
-    dplyr::select(all_of(c(cols_to_keep, "uuid")))
+    dplyr::mutate(uuid = names(files_to_read)[match(fileName, files_to_read)])
+    
   colnames(input_raw.tb) <- gsub("#", "", colnames(input_raw.tb), fixed = TRUE)
   
   input_pivoted <- pivot_wider(data = input_raw.tb, names_from = "uuid", values_from = grep("abund|count", colnames(input_raw.tb), value = TRUE), values_fill = 0)
