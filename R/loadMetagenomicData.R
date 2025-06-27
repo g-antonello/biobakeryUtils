@@ -30,13 +30,13 @@
 #' 
 #' table(is_downloaded)
 #' 
-#' cache.df <- cached_profiles[is_downloaded,]
+#' cache_table <- cached_profiles[is_downloaded,]
 #' 
 #' # this one fails with this subset of samples
-#' data.se <- loadMetagenomicData(cache.df)
+#' data.se <- loadMetagenomicData(cache_table)
 #' 
 #' # this one does not fail
-#' data.tse <- loadMetagenomicData(cache.df)
+#' data.tse <- loadMetagenomicData(cache_table)
 #' }
 
 loadMetagenomicData <- function(cache_table){
@@ -61,7 +61,7 @@ loadMetagenomicData <- function(cache_table){
   }
   
   # make the colData
-  colData.df <- dplyr::filter(sampleMetadata, uuid %in% cache.df$UUID)
+  colData.df <- dplyr::filter(sampleMetadata, uuid %in% cache_table$UUID)
   colData.df <- colData.df[match(names(runInfo.list), colData.df$uuid),]
   colData.df[["number_reads"]] <- as.integer(sapply(runInfo.list, "[[", "reads_processed"))
   rownames(colData.df) <- colData.df[["uuid"]]
