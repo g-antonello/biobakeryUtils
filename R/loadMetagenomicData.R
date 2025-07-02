@@ -14,6 +14,7 @@
 #' 
 #' @importFrom dplyr select mutate rename filter
 #' @importFrom tidyr pivot_wider
+#' @importFrom parkinsonsMetagenomicData sampleMetadata
 #' @export
 #'
 #' @examples
