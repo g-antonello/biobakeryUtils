@@ -14,7 +14,6 @@
 #' 
 #' @importFrom dplyr select mutate rename filter
 #' @importFrom tidyr pivot_wider
-#' @importFrom parkinsonsMetagenomicData sampleMetadata
 #' @export
 #'
 #' @examples
@@ -62,7 +61,7 @@ loadMetagenomicData <- function(cache_table){
   }
   
   # make the colData
-  colData.df <- dplyr::filter(sampleMetadata, uuid %in% cache_table$UUID)
+  colData.df <- dplyr::filter(parkinsonsMetagenomicData::sampleMetadata, uuid %in% cache_table$UUID)
   colData.df <- colData.df[match(names(runInfo.list), colData.df$uuid),]
   colData.df[["number_reads"]] <- as.integer(sapply(runInfo.list, "[[", "reads_processed"))
   rownames(colData.df) <- colData.df[["uuid"]]
