@@ -51,7 +51,7 @@ loadMetagenomicData <- function(cache_table){
   # get chocophlan version
   chocophlan_version <- unique(sapply(runInfo.list, "[[", "CHOCOPhlAn_version"))
   # get the run code
-  metaphlan_run_command <- unique(sapply(runInfo.list, "[[", "metaphlan_command"))
+  metaphlan_run_command <- unique(sapply(runInfo.list, "[[", "MetaPhlAn command"))
   
   # check that the versions are uniform
   if((length(chocophlan_version) != 1) | (length(metaphlan_run_command) != 1)){
@@ -129,10 +129,4 @@ getMetaPhlAn_run_info <- function(mpaFile){
   )
   
 }
-
-
-read_metaphlan_input <- function(path){
-  
-}
-
 
