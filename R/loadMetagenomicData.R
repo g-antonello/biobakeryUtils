@@ -79,8 +79,14 @@ loadMetagenomicData <- function(cache_table){
     dplyr::mutate(uuid = names(files_to_read)[match(fileName, files_to_read)]) |>
     # keep only columns we are interested in
     dplyr::select(all_of(c(cols_to_keep, "uuid")))
-    
+  # remove hashtag from first column name
   colnames(input_raw.tb) <- gsub("#", "", colnames(input_raw.tb), fixed = TRUE)
+  
+  # complete UNKNOWN with a fake taxonomy, necessary only until mia doesn't 
+  # push my feature request into Bioconductor
+  tax_lvl_int <- max(str_count(input_raw.tb$clade_name, pattern = "\\|")) + 1
+  input_raw.tb$clade_name[input_raw.tb$clade_name == "UNCLASSIFIED"] <- paste(names(all_taxonomy_levels)[1:tax_lvl_int],  "UNCLASSIFIED", collapse = "|")
+  
   
   input_pivoted <- pivot_wider(data = input_raw.tb, names_from = "uuid", values_from = grep("abund|count", colnames(input_raw.tb), value = TRUE), values_fill = 0)
   tmpFile <- file.path(tempdir(), "profiles.tsv")
