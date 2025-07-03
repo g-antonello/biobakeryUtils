@@ -32,7 +32,7 @@
 #'   \item Assigns the pruned tree to the `rowTree` slot.
 #' }
 #'
-#' @importFrom ape read.tree keep.tip
+#' @importFrom tidytree read.tree keep.tip
 #' @importFrom TreeTools AddTip
 #' @importFrom TreeSummarizedExperiment rowTree
 #' @export
@@ -63,7 +63,7 @@ AddPhyloTree_to_mpa_tse <- function(data.tse, CHOCOPhlAn_version = "latest") {
     stop(paste("timestamps supported are: ", paste(names(trees_available), collapse = ", ")))
   }
   
-  mpa.tre <- ape::read.tree(paste0("http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/", wanted_tree))
+  mpa.tre <- tidytree::read.tree(paste0("http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/", wanted_tree))
   mpa.tre$tip.label <- paste0("t__SGB", mpa.tre$tip.label)
   
   # if there is some UNCLASSIFIED, usually the default
@@ -73,7 +73,7 @@ AddPhyloTree_to_mpa_tse <- function(data.tse, CHOCOPhlAn_version = "latest") {
   }
   
   relevant_tips <- intersect(mpa.tre$tip.label, rownames(data.tse))
-  tree_subset <- ape::keep.tip(mpa.tre, relevant_tips)
+  tree_subset <- tidytree::keep.tip(mpa.tre, relevant_tips)
   data_reordered.tse <- data.tse[tree_subset$tip.label,]
   rowTree(data_reordered.tse) <- tree_subset
   return(data_reordered.tse)
