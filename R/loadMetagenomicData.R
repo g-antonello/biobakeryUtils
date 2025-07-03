@@ -47,7 +47,7 @@ loadMetagenomicData <- function(cache_table){
   runInfo <- getMetaPhlAn_run_info(files_to_read)
   # make the colData
   colData.df <- dplyr::filter(parkinsonsMetagenomicData::sampleMetadata, uuid %in% cache_table$UUID)
-  colData.df <- colData.df[match(names(runInfo.list), colData.df$uuid),]
+  colData.df <- colData.df[match(names(runInfo), colData.df$uuid),]
   colData.df[["number_reads"]] <- runInfo[["reads_processed"]]
   rownames(colData.df) <- colData.df[["uuid"]]
   
