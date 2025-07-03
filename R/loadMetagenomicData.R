@@ -85,7 +85,7 @@ loadMetagenomicData <- function(cache_table){
   # complete UNKNOWN with a fake taxonomy, necessary only until mia doesn't 
   # push my feature request into Bioconductor
   tax_lvl_int <- max(str_count(input_raw.tb$clade_name, pattern = "\\|")) + 1
-  input_raw.tb$clade_name[input_raw.tb$clade_name == "UNCLASSIFIED"] <- paste(names(all_taxonomy_levels)[1:tax_lvl_int],  "UNCLASSIFIED", collapse = "|")
+  input_raw.tb$clade_name[input_raw.tb$clade_name == "UNCLASSIFIED"] <- paste(names(all_taxonomy_levels)[1:tax_lvl_int],  "UNCLASSIFIED", collapse = "|", sep = "")
   
   
   input_pivoted <- pivot_wider(data = input_raw.tb, names_from = "uuid", values_from = grep("abund|count", colnames(input_raw.tb), value = TRUE), values_fill = 0)
@@ -93,6 +93,41 @@ loadMetagenomicData <- function(cache_table){
   write_tsv(input_pivoted, tmpFile)
   
   data.tse <- mia::importMetaPhlAn(tmpFile, col.data = colData.df)
+  
+  # make a mia workaround to include UNKNOWNs
+  mia_version <- as.integer(str_split(package.version("mia"), "\\.", simplify = TRUE))
+
+  if(mia_version[1] == 1 &
+     mia_version[2] <= 16) {
+    # break object and rebuild it, this time with UNCLASSIFIED in assay and rowData
+    assay.mtx <- assay(InputMetaphlanData.tse)
+    rowData.df <- as.data.frame(rowData(InputMetaphlanData.tse))
+    colData.df <- as.data.frame(colData(InputMetaphlanData.tse))
+    metadata.list <- metadata(InputMetaphlanData.tse)
+    
+    # UNCLASSIFIED vector, NB: this is a workarond accurate at least to the 6th digit
+    # but it is not an identical vector
+    
+    assay_new.mtx <- rbind(unlist(input_pivoted[1,2:ncol(input_pivoted)]), assay.mtx)
+    
+    # rename the row at the taxonomic level chosen, the default is the lowest,
+    # but should be more flexible to mia's code changes
+    full_taxonomy_split <- str_split(input_pivoted$clade_name[1],pattern =  "\\|")[[1]][1:(ncol(rowData.df) -1)]
+    lowest_taxonomy <- full_taxonomy_split[ncol(rowData_new.df) -1]
+    rownames(assay_new.mtx)[1] <- lowest_taxonomy
+    
+    # include taxonomy into the rowData too
+    rowData_new.df <- rbind.data.frame(c(full_taxonomy_split, paste(full_taxonomy_split, collapse = "|")), rowData.df)
+    rownames(rowData_new.df)[1] <- lowest_taxonomy
+    
+    data.tse <- TreeSummarizedExperiment(
+      assays = list(metaphlan = assay_new.mtx),
+      colData = DataFrame(colData.df),
+      rowData = DataFrame(rowData_new.df),
+      metadata = metadata.list
+    )
+  }
+  
   S4Vectors::metadata(data.tse)[["MetaPhlAn_run_info"]] <- list(
     "CHOCOPhlAn_version" = chocophlan_version, 
     "MetaPhlAn command" = metaphlan_run_command, 
