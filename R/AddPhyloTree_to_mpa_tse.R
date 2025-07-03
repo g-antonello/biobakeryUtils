@@ -33,7 +33,6 @@
 #' }
 #'
 #' @importFrom tidytree read.tree keep.tip
-#' @importFrom TreeTools AddTip
 #' @importFrom TreeSummarizedExperiment rowTree
 #' @export
 #'

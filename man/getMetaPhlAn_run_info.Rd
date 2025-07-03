@@ -4,7 +4,7 @@
 \alias{getMetaPhlAn_run_info}
 \title{Extract run info of a MetaPhlAn run}
 \usage{
-getMetaPhlAn_run_info(mpaFile)
+getMetaPhlAn_run_info(files_to_read)
 }
 \arguments{
 \item{mpaFile}{A \code{character} vector with the metaphlan profile already 
