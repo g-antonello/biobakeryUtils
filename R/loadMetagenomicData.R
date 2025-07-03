@@ -44,26 +44,11 @@ loadMetagenomicData <- function(cache_table){
   files_to_read <- cache_table$cache_path
   names(files_to_read) <- cache_table$UUID
   
-  # read first 8 lines of all files
-  fileStats_headers <- lapply(files_to_read, function(filePath) readLines(filePath, 8))
-  # extract metaphlan run information first N lines
-  runInfo.list <- lapply(fileStats_headers, getMetaPhlAn_run_info)
-  # get chocophlan version
-  chocophlan_version <- unique(sapply(runInfo.list, "[[", "CHOCOPhlAn_version"))
-  # get the run code
-  metaphlan_run_command <- unique(sapply(runInfo.list, "[[", "MetaPhlAn command"))
-  
-  # check that the versions are uniform
-  if((length(chocophlan_version) != 1) | (length(metaphlan_run_command) != 1)){
-    stop(
-      "Files were not run with one single CHOCOPhlAn version and/or run command."
-    )
-  }
-  
+  runInfo <- getMetaPhlAn_run_info(files_to_read)
   # make the colData
   colData.df <- dplyr::filter(parkinsonsMetagenomicData::sampleMetadata, uuid %in% cache_table$UUID)
   colData.df <- colData.df[match(names(runInfo.list), colData.df$uuid),]
-  colData.df[["number_reads"]] <- as.integer(sapply(runInfo.list, "[[", "reads_processed"))
+  colData.df[["number_reads"]] <- runInfo[["reads_processed"]]
   rownames(colData.df) <- colData.df[["uuid"]]
   
   # find where profiles start (not too necessary, but it's a more flexible check)
@@ -82,61 +67,25 @@ loadMetagenomicData <- function(cache_table){
   # remove hashtag from first column name
   colnames(input_raw.tb) <- gsub("#", "", colnames(input_raw.tb), fixed = TRUE)
   
-  # complete UNKNOWN with a fake taxonomy, necessary only until mia doesn't 
+  
+  mia_version <- as.integer(str_split(package.version("mia"), "\\.", simplify = TRUE))
+  if(mia_version[1] == 1 &
+     mia_version[2] <= 16) {
+  # complete UNCLASSIFIED with a fake taxonomy, necessary only until mia doesn't 
   # push my feature request into Bioconductor
   tax_lvl_int <- max(str_count(input_raw.tb$clade_name, pattern = "\\|")) + 1
   input_raw.tb$clade_name[input_raw.tb$clade_name == "UNCLASSIFIED"] <- paste(names(all_taxonomy_levels)[1:tax_lvl_int],  "UNCLASSIFIED", collapse = "|", sep = "")
-  
-  
+  }
   input_pivoted <- pivot_wider(data = input_raw.tb, names_from = "uuid", values_from = grep("abund|count", colnames(input_raw.tb), value = TRUE), values_fill = 0)
   tmpFile <- file.path(tempdir(), "profiles.tsv")
   write_tsv(input_pivoted, tmpFile)
   
   data.tse <- mia::importMetaPhlAn(tmpFile, col.data = colData.df)
   
-  # make a mia workaround to include UNKNOWNs
-  mia_version <- as.integer(str_split(package.version("mia"), "\\.", simplify = TRUE))
-
-  if(mia_version[1] == 1 &
-     mia_version[2] <= 16) {
-    # break object and rebuild it, this time with UNCLASSIFIED in assay and rowData
-    assay.mtx <- assay(data.tse)
-    rowData.df <- as.data.frame(rowData(data.tse))
-    colData.df <- as.data.frame(colData(data.tse))
-    metadata.list <- metadata(data.tse)
-    
-    # UNCLASSIFIED vector, NB: this is a workarond accurate at least to the 6th digit
-    # but it is not an identical vector
-    
-    assay_new.mtx <- rbind(unlist(input_pivoted[1,2:ncol(input_pivoted)]), assay.mtx)
-    
-    # rename the row at the taxonomic level chosen, the default is the lowest,
-    # but should be more flexible to mia's code changes
-    full_taxonomy_split <- str_split(input_pivoted$clade_name[1],pattern =  "\\|")[[1]][1:(ncol(rowData.df) -1)]
-    lowest_taxonomy <- full_taxonomy_split[ncol(rowData.df) -1]
-    rownames(assay_new.mtx)[1] <- lowest_taxonomy
-    
-    # include taxonomy into the rowData too
-    rowData_new.df <- rbind.data.frame(c(full_taxonomy_split, paste(full_taxonomy_split, collapse = "|")), rowData.df)
-    rownames(rowData_new.df)[1] <- lowest_taxonomy
-    
-    data.tse <- TreeSummarizedExperiment(
-      assays = list(metaphlan = assay_new.mtx),
-      colData = DataFrame(colData.df),
-      rowData = DataFrame(rowData_new.df),
-      metadata = metadata.list
-    )
-  }
-  
-  S4Vectors::metadata(data.tse)[["MetaPhlAn_run_info"]] <- list(
-    "CHOCOPhlAn_version" = chocophlan_version, 
-    "MetaPhlAn command" = metaphlan_run_command, 
-    "reads_processed" = "see colData[['number_reads']]"
-    )
+  S4Vectors::metadata(data.tse)[["MetaPhlAn_run_info"]] <- runInfo[names(runInfo) != "reads_processed"]
   
   return(data.tse)
 }
-
 
 
 #' Extract run info of a MetaPhlAn run 
@@ -156,16 +105,28 @@ loadMetagenomicData <- function(cache_table){
 #' 
 #' }
 #' 
-getMetaPhlAn_run_info <- function(mpaFile){
+getMetaPhlAn_run_info <- function(files_to_read){
   
-  mpaFile_run_info_raw <- mpaFile[startsWith(mpaFile, "#")]
-  mpaFile_run_info_raw <- gsub("#", "", mpaFile_run_info_raw, fixed = TRUE)
+  # read first 8 lines of all files
+  fileStats_headers <- lapply(files_to_read, function(filePath) readLines(filePath, 8))
+  # extract metaphlan run information first N lines
+  chocophlan_version <- unique(sapply(fileStats_headers, function(x) gsub("#" , "", x[1])))
+  metaphlan_run_command <- unique(sapply(fileStats_headers, function(x) gsub("#" , "", x[2])))
+  reads_processed <- sapply(fileStats_headers, function(x) readr::parse_number(x[3]))
+  # check that the versions are uniform
+  if(length(chocophlan_version) != 1){
+    stop("Files were not run with one single CHOCOPhlAn database version")
+  } 
+  
+  if(length(metaphlan_run_command) != 1){
+    stop("Files were not run with one single metaphlan command")
+  }
   
   return(
     list(
-      "CHOCOPhlAn_version" = mpaFile_run_info_raw[1],
-      "MetaPhlAn command" = mpaFile_run_info_raw[2],
-      "reads_processed" = gsub(" reads processed", "", mpaFile_run_info_raw[3],fixed = TRUE)
+      "CHOCOPhlAn_version" = chocophlan_version,
+      "MetaPhlAn command" = metaphlan_run_command,
+      "reads_processed" = reads_processed
     )
   )
   

@@ -66,8 +66,11 @@ AddPhyloTree_to_mpa_tse <- function(data.tse, CHOCOPhlAn_version = "latest") {
   mpa.tre <- read.tree(paste0("http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/", wanted_tree))
   mpa.tre$tip.label <- paste0("t__SGB", mpa.tre$tip.label)
   
-  if("UNCLASSIFIED" %in% rownames(data.tse)) {
-    mpa.tre <- AddTip(mpa.tre, label = "UNCLASSIFIED", where = 0)
+  # if there is some UNCLASSIFIED
+  
+  if(any(grepl("UNCLASSIFIED", rownames(data.tse)))) {
+    unclassified_col <- grep("UNCLASSIFIED", rownames(data.tse), value = TRUE)
+    mpa.tre <- AddTip(mpa.tre, label = unclassified_col, where = 0)
   }
   
   relevant_tips <- intersect(mpa.tre$tip.label, rownames(data.tse))

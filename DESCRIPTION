@@ -1,7 +1,7 @@
 Package: biobakeryUtils
 Type: Package
 Title: Manipulate and Analyze Data from the BioBakery Suite
-Version: 0.2.0
+Version: 0.3.0
 Author: Giacomo Antonello
 Maintainer: Giacomo Antonello <giacomoantonello1@gmail.com>
 Description: A collection of utility functions for importing, formatting, and 
@@ -9,7 +9,7 @@ Description: A collection of utility functions for importing, formatting, and
     preparing data for use with 'phyloseq' and 'TreeSummarizedExperiment' 
     objects.
 Depends: 
-    R (>= 4.0.1)
+    R (>= 4.1)
 Imports: 
     TreeTools,
     ape,
