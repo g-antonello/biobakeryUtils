@@ -1,6 +1,6 @@
 #' Rewriting of loadMetagenomicData in parkinsonsMetagenomicData
 #'
-#' This function should alegedly work faster and be more flexible toward
+#' This function should allegedly work faster and be more flexible toward
 #' empty files. Additionally, it makes use of mia::importMetaphlan, which 
 #' is constantly maintained tested. **IMPORTANT**: to work, the function must
 #' have the right to write in its temporary directory. This code may not work in
@@ -33,7 +33,7 @@
 #' cache_table <- cached_profiles[is_downloaded,]
 #' 
 #' # this one fails with this subset of samples
-#' data.se <- loadMetagenomicData(cache_table)
+#' data.tse <- loadMetagenomicData(cache_table)
 #' 
 #' # this one does not fail
 #' data.tse <- loadMetagenomicData(cache_table)
@@ -52,11 +52,12 @@ loadMetagenomicData <- function(cache_table){
   rownames(colData.df) <- colData.df[["uuid"]]
   
   # find where profiles start (not too necessary, but it's a more flexible check)
-  line_to_read_from <- grep("\\#clade_name|\\#ID", readLines(files_to_read[[1]], n = 8))
+  example_line <- readLines(files_to_read[[1]], n = 8)
+  line_to_read_from <- grep("\\#clade_name|\\#ID", example_line)
   
   # define the columns to keep, hopefully this is compatible with metaphlan3, but it is not tested yet
-  cols_all <- str_split(fileStats_headers[[1]][max(grep("#", fileStats_headers[[1]]))], pattern = "\\t")[[1]]
-  cols_to_keep <- grep(c("clade|ID|abund|count"), cols_all, value = TRUE)
+  cols_all <- str_split(example_line[line_to_read_from], pattern = "\\t")[[1]]
+  cols_to_keep <- cols_all[grepl("clade|abund|count", tolower(cols_all))]
   
   # read file as raw input 
   input_raw.tb <- read_tsv(files_to_read, skip = 4, progress = FALSE, id = "fileName") |>
@@ -76,7 +77,8 @@ loadMetagenomicData <- function(cache_table){
   tax_lvl_int <- max(str_count(input_raw.tb$clade_name, pattern = "\\|")) + 1
   input_raw.tb$clade_name[input_raw.tb$clade_name == "UNCLASSIFIED"] <- paste(names(all_taxonomy_levels)[1:tax_lvl_int],  "UNCLASSIFIED", collapse = "|", sep = "")
   }
-  input_pivoted <- pivot_wider(data = input_raw.tb, names_from = "uuid", values_from = grep("abund|count", colnames(input_raw.tb), value = TRUE), values_fill = 0)
+  
+  input_pivoted <- pivot_wider(data = input_raw.tb, names_from = "uuid", values_from = cols_to_keep[2], values_fill = 0)
   tmpFile <- file.path(tempdir(), "profiles.tsv")
   write_tsv(input_pivoted, tmpFile)
   
