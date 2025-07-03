@@ -100,10 +100,10 @@ loadMetagenomicData <- function(cache_table){
   if(mia_version[1] == 1 &
      mia_version[2] <= 16) {
     # break object and rebuild it, this time with UNCLASSIFIED in assay and rowData
-    assay.mtx <- assay(InputMetaphlanData.tse)
-    rowData.df <- as.data.frame(rowData(InputMetaphlanData.tse))
-    colData.df <- as.data.frame(colData(InputMetaphlanData.tse))
-    metadata.list <- metadata(InputMetaphlanData.tse)
+    assay.mtx <- assay(data.tse)
+    rowData.df <- as.data.frame(rowData(data.tse))
+    colData.df <- as.data.frame(colData(data.tse))
+    metadata.list <- metadata(data.tse)
     
     # UNCLASSIFIED vector, NB: this is a workarond accurate at least to the 6th digit
     # but it is not an identical vector
