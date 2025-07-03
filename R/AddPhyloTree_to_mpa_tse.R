@@ -63,18 +63,17 @@ AddPhyloTree_to_mpa_tse <- function(data.tse, CHOCOPhlAn_version = "latest") {
     stop(paste("timestamps supported are: ", paste(names(trees_available), collapse = ", ")))
   }
   
-  mpa.tre <- read.tree(paste0("http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/", wanted_tree))
+  mpa.tre <- ape::read.tree(paste0("http://cmprod1.cibio.unitn.it/biobakery4/metaphlan_databases/", wanted_tree))
   mpa.tre$tip.label <- paste0("t__SGB", mpa.tre$tip.label)
   
-  # if there is some UNCLASSIFIED
-  
+  # if there is some UNCLASSIFIED, usually the default
   if(any(grepl("UNCLASSIFIED", rownames(data.tse)))) {
     unclassified_col <- grep("UNCLASSIFIED", rownames(data.tse), value = TRUE)
-    mpa.tre <- AddTip(mpa.tre, label = unclassified_col, where = 0)
+    mpa.tre <- TreeTools::AddTip(mpa.tre, label = unclassified_col, where = 0)
   }
   
   relevant_tips <- intersect(mpa.tre$tip.label, rownames(data.tse))
-  tree_subset <- keep.tip(mpa.tre, relevant_tips)
+  tree_subset <- ape::keep.tip(mpa.tre, relevant_tips)
   data_reordered.tse <- data.tse[tree_subset$tip.label,]
   rowTree(data_reordered.tse) <- tree_subset
   return(data_reordered.tse)
