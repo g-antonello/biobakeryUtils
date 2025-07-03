@@ -113,7 +113,7 @@ loadMetagenomicData <- function(cache_table){
     # rename the row at the taxonomic level chosen, the default is the lowest,
     # but should be more flexible to mia's code changes
     full_taxonomy_split <- str_split(input_pivoted$clade_name[1],pattern =  "\\|")[[1]][1:(ncol(rowData.df) -1)]
-    lowest_taxonomy <- full_taxonomy_split[ncol(rowData_new.df) -1]
+    lowest_taxonomy <- full_taxonomy_split[ncol(rowData.df) -1]
     rownames(assay_new.mtx)[1] <- lowest_taxonomy
     
     # include taxonomy into the rowData too
