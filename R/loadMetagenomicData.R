@@ -52,9 +52,9 @@ loadMetagenomicData <- function(cache_table){
   rownames(colData.df) <- colData.df[["uuid"]]
   
   # find where profiles start (not too necessary, but it's a more flexible check)
-  line_to_read_from <- grep("\\#clade_name|\\#ID", fileStats_headers[[1]])
+  line_to_read_from <- grep("\\#clade_name|\\#ID", readLines(files_to_read[[1]], n = 8))
   
-  # define the columns to keep, hopefull this is compatible with metaphlan3, but it is not tested yet
+  # define the columns to keep, hopefully this is compatible with metaphlan3, but it is not tested yet
   cols_all <- str_split(fileStats_headers[[1]][max(grep("#", fileStats_headers[[1]]))], pattern = "\\t")[[1]]
   cols_to_keep <- grep(c("clade|ID|abund|count"), cols_all, value = TRUE)
   
