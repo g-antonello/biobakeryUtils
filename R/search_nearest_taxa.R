@@ -2,7 +2,7 @@
 #' Find phylogenetically closest taxa to a target
 #'
 #' @param phyloTree \code{phylo} tree that can be handled by `ape` and 
-#' `TreeTools` CRAN packages. IMPORTANT: So far, this function was thought to
+#' `tidytree` CRAN packages. IMPORTANT: So far, this function was thought to
 #'  work on full taxonomy as tip labels. So before extracting the phyloTree,
 #'  please run `rename_rownames.tse(your_data.tse, collapse_taxonomy(as.data.frame(rowData(your_data.tse))))`
 #' @param target_SGB \code{character} with SGB name either as "t__SGB12345" or 

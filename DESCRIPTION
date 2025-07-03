@@ -11,7 +11,8 @@ Description: A collection of utility functions for importing, formatting, and
 Depends: 
     R (>= 4.1)
 Imports: 
-    TreeTools,
+    phytools,
+    tidytree,
     ape,
     broom,
     data.table (>= 1.15),

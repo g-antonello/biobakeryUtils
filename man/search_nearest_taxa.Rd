@@ -8,7 +8,7 @@ search_nearest_taxa(phyloTree, target_SGB, taxonomy_sep = "|")
 }
 \arguments{
 \item{phyloTree}{\code{phylo} tree that can be handled by `ape` and 
-`TreeTools` CRAN packages. IMPORTANT: So far, this function was thought to
+`tidytree` CRAN packages. IMPORTANT: So far, this function was thought to
  work on full taxonomy as tip labels. So before extracting the phyloTree,
  please run `rename_rownames.tse(your_data.tse, collapse_taxonomy(as.data.frame(rowData(your_data.tse))))`}
 

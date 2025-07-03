@@ -33,6 +33,8 @@
 #' }
 #'
 #' @importFrom tidytree read.tree keep.tip
+#' @importFrom ape node.depth.edgelength
+#' @importFrom phytools bind.tip
 #' @importFrom TreeSummarizedExperiment rowTree
 #' @export
 #'
@@ -68,7 +70,8 @@ AddPhyloTree_to_mpa_tse <- function(data.tse, CHOCOPhlAn_version = "latest") {
   # if there is some UNCLASSIFIED, usually the default
   if(any(grepl("UNCLASSIFIED", rownames(data.tse)))) {
     unclassified_col <- grep("UNCLASSIFIED", rownames(data.tse), value = TRUE)
-    mpa.tre <- TreeTools::AddTip(mpa.tre, label = unclassified_col, where = 0)
+    new_tip_length <- max(ape::node.depth.edgelength(mpa.tre))
+    mpa.tre <- phytools::bind.tip(mpa.tre, where = tidytree::rootnode(mpa.tre), edge.length = new_tip_length, tip.label = unclassified_col)
   }
   
   relevant_tips <- intersect(mpa.tre$tip.label, rownames(data.tse))
