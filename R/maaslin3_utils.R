@@ -96,6 +96,9 @@ add_taxonomy_to_maaslin3 <- function(maaslin3_res, input.tse, taxLevel = "Guess"
 #' @param maaslin3_res_list \code{list} of results as come out of 
 #' `add_taxonomy_to_maaslin3`
 #' @param out.dir \code{character} specifying where to save results
+#' @param dryRun \code{logical}, if TRUE, returns paths where the files would
+#' be written. No files are actually saved. this is to test if files are saved
+#' in the right location. Default is FALSE.
 #'  
 #' @importFrom readr write_tsv
 #' @returns NULL, nothing is returned. Files are save as 
@@ -134,15 +137,15 @@ add_taxonomy_to_maaslin3 <- function(maaslin3_res, input.tse, taxLevel = "Guess"
 #' 
 #' list.files(tempdir(), pattern = "all_results_w_taxonomy*")
 
-write_maaslin3_curated_tables <- function(maaslin3_res_list, out.dir){
+write_maaslin3_curated_tables <- function(maaslin3_res_list, out.dir, dryRun = FALSE){
+  paths <- list()
+  for(testName in names(maaslin3_res_list)){
+    paths[[testName]] <- file.path(out.dir, paste0("all_results_w_taxonomy_", testName, ".tsv"))
+    
+    if(!dryRun){
+      write_tsv(maaslin3_res_list[[testName]], file.path(out.dir, paste0("all_results_w_taxonomy_", testName, ".tsv")))
+    }
+  }
   
-  write_tsv(
-    maaslin3_res_list$abundance,
-    file = file.path(out.dir, "all_results_w_taxonomy_abundance.tsv")
-  )
-  
-  write_tsv(
-    maaslin3_res_list$abundance,
-    file = file.path(out.dir, "all_results_w_taxonomy_prevalence.tsv")
-  )
+  return(paths)
 }

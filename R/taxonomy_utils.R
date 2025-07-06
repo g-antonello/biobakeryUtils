@@ -130,6 +130,9 @@ collapse_taxonomy <- function(taxonomy.df, sep = "|"){
 #' head(rownames(WallenZD_2022.tse))
 
 rename_rownames.tse <- function(data.tse, new.rownames){
+  
+  rownames(data.tse) <- new.rownames
+  
   # check that if there is a tree, rownames should be ordered in the same order
   # as the tip labels of the tree
   if(!is.null(rowTree(data.tse))) {
@@ -140,14 +143,8 @@ rename_rownames.tse <- function(data.tse, new.rownames){
         first"
       )
     }
+    rowTree(data.tse)$tip.label <- new.rownames
   }
-  if((class(data.tse) != "TreeSummarizedExperiment") | is.null(rowTree(data.tse))){
-    rownames(data.tse) <- new.rownames
-    return(data.tse)
-  }
-
-  rownames(data.tse) <- new.rownames
-  rowTree(data.tse)$tip.label <- new.rownames
   
   return(data.tse)
 }

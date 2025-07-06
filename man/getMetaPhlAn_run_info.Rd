@@ -7,7 +7,7 @@
 getMetaPhlAn_run_info(files_to_read)
 }
 \arguments{
-\item{mpaFile}{A \code{character} vector with the metaphlan profile already 
+\item{files_to_read}{A \code{character} vector with the metaphlan profile already 
 read into R with readLines}
 }
 \value{

@@ -11,6 +11,7 @@ Description: A collection of utility functions for importing, formatting, and
 Depends: 
     R (>= 4.1)
 Imports: 
+    parkinsonsMetagenomicData,
     phytools,
     tidytree,
     ape,

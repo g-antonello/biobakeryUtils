@@ -14,6 +14,7 @@
 #' 
 #' @importFrom dplyr select mutate rename filter
 #' @importFrom tidyr pivot_wider
+#' @import parkinsonsMetagenomicData
 #' @export
 #'
 #' @examples
@@ -92,11 +93,13 @@ loadMetagenomicData <- function(cache_table){
 
 #' Extract run info of a MetaPhlAn run 
 #'
-#' @param mpaFile A \code{character} vector with the metaphlan profile already 
+#' @param files_to_read A \code{character} vector with the metaphlan profile already 
 #' read into R with readLines
 #'
 #' @returns A \code{list} of MetaPhlAn run information (db version, code, reads)
 #' @export
+#' 
+#' @importFrom readr parse_number
 #'
 #' @examples
 #' 

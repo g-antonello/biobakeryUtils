@@ -4,13 +4,17 @@
 \alias{write_maaslin3_curated_tables}
 \title{Write curated maaslin3 output}
 \usage{
-write_maaslin3_curated_tables(maaslin3_res_list, out.dir)
+write_maaslin3_curated_tables(maaslin3_res_list, out.dir, dryRun = FALSE)
 }
 \arguments{
 \item{maaslin3_res_list}{\code{list} of results as come out of 
 `add_taxonomy_to_maaslin3`}
 
 \item{out.dir}{\code{character} specifying where to save results}
+
+\item{dryRun}{\code{logical}, if TRUE, returns paths where the files would
+be written. No files are actually saved. this is to test if files are saved
+in the right location. Default is FALSE.}
 }
 \value{
 NULL, nothing is returned. Files are save as 
