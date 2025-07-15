@@ -9,7 +9,7 @@ Description: A collection of utility functions for importing, formatting, and
     preparing data for use with 'phyloseq' and 'TreeSummarizedExperiment' 
     objects.
 Depends: 
-    R (>= 4.1)
+    R (>= 4.1.0)
 Imports: 
     parkinsonsMetagenomicData,
     phytools,
