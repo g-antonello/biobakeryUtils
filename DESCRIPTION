@@ -23,6 +23,7 @@ Imports:
     readr,
     stringr,
     tidyr,
+    tibble,
     maaslin3,
     TreeSummarizedExperiment,
     SummarizedExperiment,
