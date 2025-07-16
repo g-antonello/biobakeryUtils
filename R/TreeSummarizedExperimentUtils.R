@@ -6,7 +6,7 @@
 #'
 #' @param tse \code{TreeSummarizedExperiment} object with or without
 #' rowTree and/or colTree
-#' @param dir \code{character} specifying the directory in which a new directory
+#' @param out.dir \code{character} specifying the directory in which a new directory
 #' will be generated, with the name of the R object passed to the `tse`
 #' parameter.
 #'
@@ -52,28 +52,32 @@
 #'
 #'  list.files(file.path(tempdir(), "tse"), recursive = TRUE)
 
-write_TSE_to_dir <- function(tse, dir) {
-  # create output directory if it doesn't exist
-  tse_dirName <- deparse(substitute(tse))
-  dir.create(file.path(dir, tse_dirName),
+write_TSE_to_dir <- function(tse, out.dir) {
+  # create output out.directory if it doesn't exist
+  tse_out.dirName <- deparse(substitute(tse))
+  dir.create(file.path(out.dir, tse_out.dirName),
              showWarnings = FALSE,
              recursive = TRUE)
   
   # write the colData
   write_tsv(
     colData(tse) |> as.data.frame() |> rownames_to_column("rownames"),
-    file = file.path(dir, tse_dirName, paste0("colData", ".tsv"))
+    file = file.path(out.dir, tse_out.dirName, paste0("colData", ".tsv"))
+  )
+  # also write column specifications
+  write_tsv(
+    colDataSpecs(tse), file.path(out.dir, tse_out.dirName, paste0("colData_colSpecs", ".tsv"))
   )
   
   # write the rowData
   write_tsv(
     rowData(tse) |> as.data.frame() |> rownames_to_column("rownames"),
-    file = file.path(dir, tse_dirName, paste0("rowData", ".tsv"))
+    file = file.path(out.dir, tse_out.dirName, paste0("rowData", ".tsv"))
   )
   
-  # write the assays, including the subdirectory
+  # write the assays, including the subout.directory
   dir.create(
-    file.path(dir, tse_dirName, "assays"),
+    file.path(out.dir, tse_out.dirName, "assays"),
     showWarnings = FALSE,
     recursive = TRUE
   )
@@ -83,28 +87,80 @@ write_TSE_to_dir <- function(tse, dir) {
       assay(tse, assayX) |>
         as.data.frame() |>
         rownames_to_column("rownames"),
-      file = file.path(dir, tse_dirName, "assays", paste0(assayX, ".tsv"))
+      file = file.path(out.dir, tse_out.dirName, "assays", paste0(assayX, ".tsv"))
     )
     
   }
   
+  # write order of assays
+  writeLines(assayNames(tse), con = file.path(out.dir, tse_out.dirName, "assays", "assaysOrder.txt"), sep = "\n")
+  
   # write rowTree file
   if (inherits(tse, "TreeSummarizedExperiment")) {
     if (!is.null(rowTree(tse))) {
-      write.tree(rowTree(tse), file = file.path(dir, tse_dirName, "rowTree.tre"))
+      write.tree(rowTree(tse), file = file.path(out.dir, tse_out.dirName, "rowTree.tre"))
     }
     # write colTree file
     if (!is.null(colTree(tse))) {
-      write.tree(rowTree(tse), file = file.path(dir, tse_dirName, "colTree.tre"))
+      write.tree(rowTree(tse), file = file.path(out.dir, tse_out.dirName, "colTree.tre"))
     }
   }
 }
 
-#' read multiple tsv files into a TreeSummarizedExperiment
+
+#' Specify classes of column data
+#' Most importantly, the levels of a factor
+#' 
+#' @param tse \code{TreeSummarizedExperiment} Object
+#'
+#' @returns A \code{data.frame}
+#' @export
+#'
+#' @examples
+#'  library(TreeSummarizedExperiment)
+#'  data("tinyTree")
+#'
+#'  # the count.mat table
+#'  count.mat <- matrix(rpois(100, 50), nrow = 10)
+#'
+#'  rownames(count.mat) <- c(tinyTree$tip.label)
+#'
+#'  colnames(count.mat) <- paste("C_", 1:10, sep = "_")
+#'
+#'  # The sample information
+#' sampC <- data.frame(
+#'   condition = rep(c("control", "trt"), each = 5),
+#'   gender = sample(x = 1:2, size = 10, replace = TRUE)
+#'   )
+#'
+#' rownames(sampC) <- colnames(count.mat)
+#'
+#'  # build a TreeSummarizedExperiment object
+#'  tse <- TreeSummarizedExperiment(
+#'    assays = list("counts" = count.mat),
+#'    colData = sampC,
+#'    rowTree = tinyTree
+#'    )
+#'    
+#'  tse
+
+colDataSpecs <- function(tse){
+  
+  colSpecs.df <- data.frame(
+    colName = colnames(colData(tse)),
+    colClass = sapply(colData(tse), class),
+    fctLevels = sapply(colData(tse), function(x) paste(levels(x), collapse = ", "))
+    )
+  
+  return(colSpecs.df)
+}
+
+
+#' Read multiple tsv files into a TreeSummarizedExperiment
 #'
 #' This utility function is the counterpart of
 #'
-#' @param dir \code{character} indicating the directory that was created
+#' @param tse.dir \code{character} indicating the directory that was created
 #' with `write_TSE_to_dir()`
 #'
 #' @returns A \code{TreeSummarizedExperiment}
@@ -148,9 +204,10 @@ write_TSE_to_dir <- function(tse, dir) {
 #'
 #'  list.files(file.path(tempdir(), "tse"), recursive = TRUE)
 #'
-#'  tse2 <- read_TSE_from_dir(dir = file.path(tempdir(), "tse"))
+#'  tse2 <- read_TSE_from_dir(file.path(tempdir(), "tse"))
 #'
 #'  identical(tse, tse2) # FALSE
+#'  all.equal(tse, tse2) # TRUE
 #'  identical(rownames(tse), rownames(tse2)) # TRUE
 #'  identical(colnames(tse), colnames(tse2)) # TRUE
 #'  identical(tse@rowTree$phylo$tip.label, tse2@rowTree$phylo$tip.label) # TRUE
@@ -164,14 +221,32 @@ write_TSE_to_dir <- function(tse, dir) {
 #'  identical(round(assay(tse), 10), round(assay(tse), 10)) # The encoding
 #'  # could be improved, but the matrices are practically the same
 
-read_TSE_from_dir <- function(dir) {
-  files <- list.files(dir, full.names = TRUE)
+read_TSE_from_dir <- function(tse.dir) {
+  files <- list.files(tse.dir, full.names = TRUE)
+  
+  # get colClasses and specify 
+  colDataSpecs <- read_tsv(
+    grep("colData_colSpecs.tsv", files, value = TRUE), show_col_types = FALSE) 
+    # this is done here because read_tsv may change in the future
+    colDataSpecs$readrClass <- ifelse(colDataSpecs$colClass == "factor", 
+                                       "c", 
+                                       substr(colDataSpecs$colClass, 1, 1)
+                                       )
+  
+  # get colData
   colData <- read_tsv(
-    grep("colData", files, value = TRUE),
-    progress = FALSE,
-    show_col_types = FALSE
+    grep("colData.tsv", files, value = TRUE),
+    col_types = colDataSpecs$readrClass,
+    progress = FALSE
   ) |>
     column_to_rownames("rownames")
+  
+  # recode colData factors
+  for(col in colDataSpecs$colName[colDataSpecs$colClass == "factor"]){
+    colData[[col]] <- factor(colData[[col]], levels = strsplit(colDataSpecs$fctLevels[colDataSpecs$colName == col], "\\,\\ ")[[1]])
+  }
+  
+  # load rowData
   rowData <- read_tsv(
     grep("rowData", files, value = TRUE),
     progress = FALSE,
@@ -180,7 +255,7 @@ read_TSE_from_dir <- function(dir) {
     column_to_rownames("rownames")
   
   # read assay file names
-  files_assays <- list.files(file.path(dir, "assays"), full.names = TRUE)
+  files_assays <- list.files(file.path(tse.dir, "assays"), pattern = "*.tsv", full.names = TRUE)
   
   assays <- lapply(files_assays,
                    read_tsv,
@@ -189,6 +264,9 @@ read_TSE_from_dir <- function(dir) {
     lapply(column_to_rownames, "rownames") |>
     lapply(as.matrix)
   names(assays) <- gsub(".tsv", "", basename(files_assays), fixed = TRUE)
+  
+  assaysOrder <- readLines(file.path(tse.dir, "assays", "assaysOrder.txt"))
+  assays <- assays[assaysOrder]
   
   # read tree(s)
   rowTree <- tryCatch(
@@ -204,6 +282,8 @@ read_TSE_from_dir <- function(dir) {
   
   # ensure correct row and columns order, exclude rows and columns that are not in common between
   # objects that should be in common
+  # maybe this should actually shoot an error, because this is not supposed to 
+  # happen
   assays_and_rowData <- append(lapply(assays, rownames), list("rowData" = rownames(rowData)))
   
   rows_in_common <- purrr::reduce(assays_and_rowData, intersect)
@@ -226,3 +306,4 @@ read_TSE_from_dir <- function(dir) {
   
   return(tse_rebuilt_reordered_rows)
 }
+

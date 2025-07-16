@@ -2,12 +2,12 @@
 % Please edit documentation in R/TreeSummarizedExperimentUtils.R
 \name{read_TSE_from_dir}
 \alias{read_TSE_from_dir}
-\title{read multiple tsv files into a TreeSummarizedExperiment}
+\title{Read multiple tsv files into a TreeSummarizedExperiment}
 \usage{
-read_TSE_from_dir(dir)
+read_TSE_from_dir(tse.dir)
 }
 \arguments{
-\item{dir}{\code{character} indicating the directory that was created
+\item{tse.dir}{\code{character} indicating the directory that was created
 with `write_TSE_to_dir()`}
 }
 \value{
@@ -50,9 +50,10 @@ rownames(sampC) <- colnames(count.mat)
 
  list.files(file.path(tempdir(), "tse"), recursive = TRUE)
 
- tse2 <- read_TSE_from_dir(dir = file.path(tempdir(), "tse"))
+ tse2 <- read_TSE_from_dir(file.path(tempdir(), "tse"))
 
  identical(tse, tse2) # FALSE
+ all.equal(tse, tse2) # TRUE
  identical(rownames(tse), rownames(tse2)) # TRUE
  identical(colnames(tse), colnames(tse2)) # TRUE
  identical(tse@rowTree$phylo$tip.label, tse2@rowTree$phylo$tip.label) # TRUE

@@ -3,6 +3,7 @@
 export(AddPhyloTree_to_mpa_tse)
 export(PERMANOVA_to_table)
 export(add_taxonomy_to_maaslin3)
+export(colDataSpecs)
 export(collapse_taxonomy)
 export(complete_unknown_taxonomy)
 export(expand_taxonomy)
