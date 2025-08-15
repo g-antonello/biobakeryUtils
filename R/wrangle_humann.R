@@ -26,8 +26,7 @@ wrangle_humann <- function(input_table, input_type = "ko"){
     description.list <- strsplit(input_table[[1]], "\\:\\ ") 
     
     description.df <- data.frame(
-      pathway = make.names(sapply(description.list, "[", 1)),
-      pathway_short = sapply(description.list, "[", 1),
+      pathway = sapply(description.list, "[", 1),
       pathway_long = sapply(description.list, "[", 2)
     ) 
   rownames(description.df) <- description.df[[1]]
