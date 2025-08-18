@@ -1,8 +1,7 @@
-
-
-#' Split a `TreeSummarizedExperiment` object into multiple .tsv files
+#' Split a `TreeSummarizedExperiment` object into multiple human readable files
 #'
-#' The components are saved into a directory that gets created by this function
+#' The components are saved into a directory that gets created by this function.
+#' AltExp slot is ignored in this function
 #'
 #' @param tse \code{TreeSummarizedExperiment} object with or without
 #' rowTree and/or colTree
@@ -11,9 +10,11 @@
 #' parameter.
 #'
 #' @importFrom readr write_tsv
+#' @importFrom jsonlite write_json
 #' @importFrom tibble rownames_to_column
 #' @importFrom TreeSummarizedExperiment rowTree
 #' @importFrom ape write.tree
+#' @importFrom S4Vectors metadata
 #'
 #' @returns Nothing, the main output of this function is multiple .tsv files
 #' @export
@@ -48,36 +49,33 @@
 #'
 #'  set.seed(1234)
 #'
-#'  write_TSE_to_dir(tse, tempdir())
+#'  write_TSE_to_dir_noAltExp(tse, tempdir())
 #'
 #'  list.files(file.path(tempdir(), "tse"), recursive = TRUE)
 
-write_TSE_to_dir <- function(tse, out.dir) {
-  # create output out.directory if it doesn't exist
-  tse_out.dirName <- deparse(substitute(tse))
-  dir.create(file.path(out.dir, tse_out.dirName),
-             showWarnings = FALSE,
-             recursive = TRUE)
-  
+write_TSE_to_dir_noAltExp <- function(tse, out.dir) {
   # write the colData
   write_tsv(
     colData(tse) |> as.data.frame() |> rownames_to_column("rownames"),
-    file = file.path(out.dir, tse_out.dirName, paste0("colData", ".tsv"))
+    file = file.path(out.dir, paste0("colData", ".tsv"))
   )
   # also write column specifications
   write_tsv(
-    colDataSpecs(tse), file.path(out.dir, tse_out.dirName, paste0("colData_colSpecs", ".tsv"))
+    colDataSpecs(tse), file.path(out.dir, paste0("colData_colSpecs", ".tsv"))
   )
   
   # write the rowData
   write_tsv(
     rowData(tse) |> as.data.frame() |> rownames_to_column("rownames"),
-    file = file.path(out.dir, tse_out.dirName, paste0("rowData", ".tsv"))
+    file = file.path(out.dir, paste0("rowData", ".tsv"))
   )
   
-  # write the assays, including the subout.directory
+  # write metadata as json file
+  jsonlite::write_json(metadata(tse), file.path(out.dir, "metadata.json"))
+  
+  # write the assays, including the sub-directory
   dir.create(
-    file.path(out.dir, tse_out.dirName, "assays"),
+    file.path(out.dir, "assays"),
     showWarnings = FALSE,
     recursive = TRUE
   )
@@ -87,23 +85,49 @@ write_TSE_to_dir <- function(tse, out.dir) {
       assay(tse, assayX) |>
         as.data.frame() |>
         rownames_to_column("rownames"),
-      file = file.path(out.dir, tse_out.dirName, "assays", paste0(assayX, ".tsv"))
+      file = file.path(out.dir, "assays", paste0(assayX, ".tsv"))
     )
     
   }
   
   # write order of assays
-  writeLines(assayNames(tse), con = file.path(out.dir, tse_out.dirName, "assays", "assaysOrder.txt"), sep = "\n")
+  writeLines(assayNames(tse), con = file.path(out.dir, "assays", "assaysOrder.txt"), sep = "\n")
   
   # write rowTree file
   if (inherits(tse, "TreeSummarizedExperiment")) {
     if (!is.null(rowTree(tse))) {
-      write.tree(rowTree(tse), file = file.path(out.dir, tse_out.dirName, "rowTree.tre"))
+      write.tree(rowTree(tse), file = file.path(out.dir, "rowTree.tre"))
     }
     # write colTree file
     if (!is.null(colTree(tse))) {
-      write.tree(rowTree(tse), file = file.path(out.dir, tse_out.dirName, "colTree.tre"))
+      write.tree(rowTree(tse), file = file.path(out.dir, "colTree.tre"))
     }
+  }
+}
+
+write_TSE_to_dir <- function(tse, out.dir){
+  if(dir.exists(out.dir)){
+    error("Output directory already exists")
+  } 
+  dir.create(out.dir, recursive = TRUE)
+  
+  write_TSE_to_dir_noAltExp(tse = tse, out.dir = out.dir)
+  
+  if(length(altExpNames(tse)) > 0){
+  for(aexp in altExpNames(tse)){
+    
+    altexp.outdir <- file.path(out.dir, "altExps", aexp)
+    
+    if(dir.exists(altexp.outdir)){
+      error("Output directory already exists")
+    } 
+    dir.create(altexp.outdir, recursive = TRUE)
+    
+    write_TSE_to_dir_noAltExp(altExp(tse, aexp), out.dir = altexp.outdir)
+    }
+    
+  # also write loading order, possibly
+  writeLines(altExpNames(tse), con = file.path(out.dir, "altExps", "AltExpOrder.txt"), sep = "\n")
   }
 }
 
@@ -155,7 +179,6 @@ colDataSpecs <- function(tse){
   return(colSpecs.df)
 }
 
-
 #' Read multiple tsv files into a TreeSummarizedExperiment
 #'
 #' This utility function is the counterpart of
@@ -168,6 +191,7 @@ colDataSpecs <- function(tse){
 #' @importFrom readr read_tsv
 #' @importFrom tibble column_to_rownames
 #' @importFrom purrr reduce
+#' @importFrom jsonlite read_json
 #' @export
 #'
 #' @examples
@@ -254,7 +278,10 @@ read_TSE_from_dir <- function(tse.dir) {
   ) |>
     column_to_rownames("rownames")
   
-  # read assay file names
+  # load metadata as list (if any)
+  metadata.list <- tryCatch(read_json(file.path(tse.dir, "metadata.json"), simplifyVector = TRUE), error = function(e) return(NULL))
+  
+  # read assay file names (if any)
   files_assays <- list.files(file.path(tse.dir, "assays"), pattern = "*.tsv", full.names = TRUE)
   
   assays <- lapply(files_assays,
@@ -293,6 +320,7 @@ read_TSE_from_dir <- function(tse.dir) {
   cols_in_common <- purrr::reduce(assays_and_colData, intersect)
   
   tse_rebuilt <- TreeSummarizedExperiment(
+    metadata = metadata.list,
     assays = lapply(assays, function(x)
       x[rows_in_common, cols_in_common]),
     rowData = DataFrame(rowData[rows_in_common, ]),
