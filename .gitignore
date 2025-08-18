@@ -4,4 +4,4 @@
 .Ruserdata
 
 # ignore Mac's hidden cache
-.DS_Store
+*.DS_Store
