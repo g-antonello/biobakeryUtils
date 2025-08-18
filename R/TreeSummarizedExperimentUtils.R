@@ -1,3 +1,51 @@
+#' Specify classes of column data
+#' Most importantly, the levels of a factor
+#' 
+#' @param tse \code{TreeSummarizedExperiment} Object
+#'
+#' @returns A \code{data.frame}
+#' @export
+#'
+#' @examples
+#'  library(TreeSummarizedExperiment)
+#'  data("tinyTree")
+#'
+#'  # the count.mat table
+#'  count.mat <- matrix(rpois(100, 50), nrow = 10)
+#'
+#'  rownames(count.mat) <- c(tinyTree$tip.label)
+#'
+#'  colnames(count.mat) <- paste("C_", 1:10, sep = "_")
+#'
+#'  # The sample information
+#' sampC <- data.frame(
+#'   condition = rep(c("control", "trt"), each = 5),
+#'   gender = sample(x = 1:2, size = 10, replace = TRUE)
+#'   )
+#'
+#' rownames(sampC) <- colnames(count.mat)
+#'
+#'  # build a TreeSummarizedExperiment object
+#'  tse <- TreeSummarizedExperiment(
+#'    assays = list("counts" = count.mat),
+#'    colData = sampC,
+#'    rowTree = tinyTree
+#'    )
+#'    
+#'  tse
+
+colDataSpecs <- function(tse){
+  
+  colSpecs.df <- data.frame(
+    colName = colnames(colData(tse)),
+    colClass = sapply(colData(tse), class),
+    fctLevels = sapply(colData(tse), function(x) paste(levels(x), collapse = ", "))
+  )
+  
+  return(colSpecs.df)
+}
+
+
 #' Split a `TreeSummarizedExperiment` object into multiple human readable files
 #'
 #' The components are saved into a directory that gets created by this function.
@@ -132,52 +180,7 @@ write_TSE_to_dir <- function(tse, out.dir){
 }
 
 
-#' Specify classes of column data
-#' Most importantly, the levels of a factor
-#' 
-#' @param tse \code{TreeSummarizedExperiment} Object
-#'
-#' @returns A \code{data.frame}
-#' @export
-#'
-#' @examples
-#'  library(TreeSummarizedExperiment)
-#'  data("tinyTree")
-#'
-#'  # the count.mat table
-#'  count.mat <- matrix(rpois(100, 50), nrow = 10)
-#'
-#'  rownames(count.mat) <- c(tinyTree$tip.label)
-#'
-#'  colnames(count.mat) <- paste("C_", 1:10, sep = "_")
-#'
-#'  # The sample information
-#' sampC <- data.frame(
-#'   condition = rep(c("control", "trt"), each = 5),
-#'   gender = sample(x = 1:2, size = 10, replace = TRUE)
-#'   )
-#'
-#' rownames(sampC) <- colnames(count.mat)
-#'
-#'  # build a TreeSummarizedExperiment object
-#'  tse <- TreeSummarizedExperiment(
-#'    assays = list("counts" = count.mat),
-#'    colData = sampC,
-#'    rowTree = tinyTree
-#'    )
-#'    
-#'  tse
 
-colDataSpecs <- function(tse){
-  
-  colSpecs.df <- data.frame(
-    colName = colnames(colData(tse)),
-    colClass = sapply(colData(tse), class),
-    fctLevels = sapply(colData(tse), function(x) paste(levels(x), collapse = ", "))
-    )
-  
-  return(colSpecs.df)
-}
 
 #' Read multiple tsv files into a TreeSummarizedExperiment
 #'
@@ -245,43 +248,46 @@ colDataSpecs <- function(tse){
 #'  identical(round(assay(tse), 10), round(assay(tse), 10)) # The encoding
 #'  # could be improved, but the matrices are practically the same
 
-read_TSE_from_dir <- function(tse.dir) {
-  files <- list.files(tse.dir, full.names = TRUE)
+read_TSE_from_dir_noAltExp <- function(tse.dir) {
   
-  # get colClasses and specify 
+  # colData
+  ## get colClasses and specify them while reading colData
   colDataSpecs <- read_tsv(
-    grep("colData_colSpecs.tsv", files, value = TRUE), show_col_types = FALSE) 
+    file.path(tse.dir, "colData_colSpecs.tsv"), show_col_types = FALSE) 
     # this is done here because read_tsv may change in the future
     colDataSpecs$readrClass <- ifelse(colDataSpecs$colClass == "factor", 
                                        "c", 
                                        substr(colDataSpecs$colClass, 1, 1)
                                        )
   
-  # get colData
+  ## read colData and specify colClasses
   colData <- read_tsv(
-    grep("colData.tsv", files, value = TRUE),
+    file.path(tse.dir, "colData.tsv"),
     col_types = colDataSpecs$readrClass,
     progress = FALSE
   ) |>
     column_to_rownames("rownames")
   
-  # recode colData factors
+  ## recode colData factors with correct levels
   for(col in colDataSpecs$colName[colDataSpecs$colClass == "factor"]){
     colData[[col]] <- factor(colData[[col]], levels = strsplit(colDataSpecs$fctLevels[colDataSpecs$colName == col], "\\,\\ ")[[1]])
   }
   
-  # load rowData
+  # rowData
   rowData <- read_tsv(
-    grep("rowData", files, value = TRUE),
+    file.path(tse.dir, "rowData.tsv"),
     progress = FALSE,
     show_col_types = FALSE
   ) |>
     column_to_rownames("rownames")
   
-  # load metadata as list (if any)
-  metadata.list <- tryCatch(read_json(file.path(tse.dir, "metadata.json"), simplifyVector = TRUE), error = function(e) return(NULL))
+  # metadata as list (if any)
+  metadata.list <- tryCatch(
+    jsonlite::read_json(file.path(tse.dir, "metadata.json"), simplifyVector = TRUE), 
+    error = function(e) return(NULL), 
+    warning = function(w) return(NULL))
   
-  # read assay file names (if any)
+  # assay(s) file names
   files_assays <- list.files(file.path(tse.dir, "assays"), pattern = "*.tsv", full.names = TRUE)
   
   assays <- lapply(files_assays,
@@ -297,14 +303,16 @@ read_TSE_from_dir <- function(tse.dir) {
   
   # read tree(s)
   rowTree <- tryCatch(
-    tidytree::read.tree(grep("rowTree.tre", files, value = TRUE)),
+    tidytree::read.tree(file.path(tse.dir, "rowTree.tre")),
     error = function(e)
-      return(NULL)
+      return(NULL), warning = function(w)
+        return(NULL)
   )
   colTree <- tryCatch(
-    tidytree::read.tree(grep("colTree.tre", files, value = TRUE)),
+    tidytree::read.tree(file.path(tse.dir, "colTree.tre")),
     error = function(e)
-      return(NULL)
+      return(NULL), warning = function(w)
+        return(NULL)
   )
   
   # ensure correct row and columns order, exclude rows and columns that are not in common between
@@ -322,16 +330,94 @@ read_TSE_from_dir <- function(tse.dir) {
   tse_rebuilt <- TreeSummarizedExperiment(
     metadata = metadata.list,
     assays = lapply(assays, function(x)
-      x[rows_in_common, cols_in_common]),
+      x[rows_in_common, cols_in_common, drop = FALSE]),
     rowData = DataFrame(rowData[rows_in_common, ]),
     colData = DataFrame(colData[cols_in_common, ]),
     rowTree = rowTree,
     colTree = colTree
   )
   
-  # No need, but I will leave it here to be sure
-  tse_rebuilt_reordered_rows <- reorder_taxa_with_phyloTree_labels(tse_rebuilt)
-  
-  return(tse_rebuilt_reordered_rows)
+  return(tse_rebuilt)
 }
 
+
+#' Read a TreeSummarizedExperiment from human readable files
+#' 
+#' This function is the reading counterpart of the `write_TSE_to_dir` function.
+#' All files are human readable and maybe redundant, but at least more 
+#' conservative.
+#'
+#' @param tse.dir \code{character}. The path that a `TreeSummarizedExperiment` 
+#' was saved into
+#'
+#' @returns A \code{TreeSummarizedExperiment}
+#' @export
+#'
+#' @examples
+#'  library(TreeSummarizedExperiment)
+#'  data("tinyTree")
+#'
+#'  # the count.mat table
+#'  count.mat <- matrix(rpois(100, 50), nrow = 10)
+#'
+#'  rownames(count.mat) <- c(tinyTree$tip.label)
+#'
+#'  colnames(count.mat) <- paste("C_", 1:10, sep = "_")
+#'
+#'  # The sample information
+#' sampC <- data.frame(
+#'   condition = rep(c("control", "trt"), each = 5),
+#'   gender = as.numeric(sample(x = 1:2, size = 10, replace = TRUE))
+#'   )
+#'
+#' rownames(sampC) <- colnames(count.mat)
+#'
+#'  # build a TreeSummarizedExperiment object
+#'  tse <- TreeSummarizedExperiment(
+#'    assays = list("counts" = count.mat),
+#'    colData = sampC,
+#'    rowTree = tinyTree
+#'    )
+#'  tse <- reorder_taxa_with_phyloTree_labels(tse)
+#'  # save the tse
+#'
+#'  set.seed(1234)
+#'
+#'  write_TSE_to_dir(tse, tempdir())
+#'
+#'  list.files(file.path(tempdir(), "tse"), recursive = TRUE)
+#'
+#'  tse2 <- read_TSE_from_dir(file.path(tempdir(), "tse"))
+#'
+#'  identical(tse, tse2) # FALSE
+#'  all.equal(tse, tse2) # TRUE
+#'  identical(rownames(tse), rownames(tse2)) # TRUE
+#'  identical(colnames(tse), colnames(tse2)) # TRUE
+#'  identical(tse@rowTree$phylo$tip.label, tse2@rowTree$phylo$tip.label) # TRUE
+#'  identical(tse@rowTree$phylo$node.label, tse2@rowTree$phylo$node.label) # TRUE
+#'  identical(
+#'  round(tse@rowTree$phylo$edge.length,10),
+#'  round(tse2@rowTree$phylo$edge.length, 10)
+#'  ) # TRUE, identical at least to the 10th digit
+#'
+#'  identical(assay(tse), assay(tse)) # FALSE, I don't yet know why
+#'  identical(round(assay(tse), 10), round(assay(tse), 10)) # The encoding
+#'  # could be improved, but the matrices are practically the same
+
+read_TSE_from_dir <- function(tse.dir) {
+  tse_rebuilt <- read_TSE_from_dir_noAltExp(tse.dir)
+  
+  if(dir.exists(file.path(tse.dir, "altExps"))){
+    altexps_dirs <- list.dirs(file.path(tse.dir, "altExps"), recursive = FALSE)
+    
+    altExprs <- lapply(altexps_dirs, function(altexp.dir) read_TSE_from_dir_noAltExp(altexp.dir))
+    
+    exps_order <- readLines(file.path(tse.dir, "altExps", "AltExpOrder.txt"))
+    
+    altExprs <- altExprs[exps_order]
+    altExp(tse_rebuilt) <- altExprs
+  }
+  
+  
+  return(tse_rebuilt)
+  }
