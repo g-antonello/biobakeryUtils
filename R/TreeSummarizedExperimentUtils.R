@@ -65,7 +65,6 @@ colDataSpecs <- function(tse){
 #' @importFrom S4Vectors metadata
 #'
 #' @returns Nothing, the main output of this function is multiple .tsv files
-#' @export
 #'
 #' @examples
 #'  library(TreeSummarizedExperiment)
@@ -195,7 +194,6 @@ write_TSE_to_dir <- function(tse, out.dir){
 #' @importFrom tibble column_to_rownames
 #' @importFrom purrr reduce
 #' @importFrom jsonlite read_json
-#' @export
 #'
 #' @examples
 #'  library(TreeSummarizedExperiment)
