@@ -1,49 +1,78 @@
 #' Specify classes of column data
 #' Most importantly, the levels of a factor
 #' 
-#' @param tse \code{TreeSummarizedExperiment} Object
-#'
-#' @returns A \code{data.frame}
+#' @param df \code{data.frame} or \code{DataFrame} Object
+#' 
+#' @importFrom SummarizedExperiment colData
+#' 
+#' @returns A \code{data.frame} with per-column class and if a factor the levels 
+#' in a third column
 #' @export
 #'
 #' @examples
-#'  library(TreeSummarizedExperiment)
-#'  data("tinyTree")
-#'
-#'  # the count.mat table
-#'  count.mat <- matrix(rpois(100, 50), nrow = 10)
-#'
-#'  rownames(count.mat) <- c(tinyTree$tip.label)
-#'
-#'  colnames(count.mat) <- paste("C_", 1:10, sep = "_")
-#'
-#'  # The sample information
+#' library(TreeSummarizedExperiment)
+#' data("tinyTree", package = "TreeSummarizedExperiment")
+#' set.seed(1234)
+#' 
+#' # basic assay
+#' count.mat <- matrix(rpois(100, 50), nrow = 10)
+#' rownames(count.mat) <- tinyTree$tip.label
+#' colnames(count.mat) <- paste0("C_", 1:10)
+#' 
+#' # sample data
 #' sampC <- data.frame(
-#'   condition = rep(c("control", "trt"), each = 5),
-#'   gender = sample(x = 1:2, size = 10, replace = TRUE)
-#'   )
-#'
+#'   condition = factor(rep(c("control", "trt"), each = 5), 
+#'                      levels = c("trt", "control")),
+#'   gender = factor(sample(c("male", "female"), size = 10, replace = TRUE),
+#'                   levels = c("male", "female"))
+#' )
 #' rownames(sampC) <- colnames(count.mat)
-#'
-#'  # build a TreeSummarizedExperiment object
-#'  tse <- TreeSummarizedExperiment(
-#'    assays = list("counts" = count.mat),
-#'    colData = sampC,
-#'    rowTree = tinyTree
-#'    )
-#'    
-#'  tse
+#' 
+#' # create rowData
+#' rowData <- DataFrame(
+#' Feature_gr1 = factor(rep(c("blue", "red"), each = 5)),
+#' Feature_gr2 = rep(c(2,3,4,6,1), 2)
+#' )
+#' rownames(rowData) <- rownames(count.mat)
+#' 
+#' # base tse
+#' tse <- TreeSummarizedExperiment(
+#'   assays = list(counts = count.mat),
+#'   colData = sampC,
+#'   rowData = rowData,
+#'   rowTree = tinyTree
+#' )
+#' 
+#' # add altExp
+#' alt_colData <- sampC
+#' alt_colData$altTreat <- rep(0:1, 5)
+#' 
+#' alt_counts <- count.mat[1:5, ]
+#' alt_rowData <- S4Vectors::DataFrame(feature_type = rep("altFeature", 5))
+#' alt_se <- TreeSummarizedExperiment(assays = list(counts = alt_counts), rowData = alt_rowData, colData = alt_colData)
+#' 
+#' altExp(tse, "altSubset") <- alt_se
+#' metadata(tse)$info <- "test_metadata"
+#'  
+#' DataFrameSpecs(colData(tse))
+#' DataFrameSpecs(rowData(tse))
 
-colDataSpecs <- function(tse){
-  
+DataFrameSpecs <- function(df) {
   colSpecs.df <- data.frame(
-    colName = colnames(colData(tse)),
-    colClass = sapply(colData(tse), class),
-    fctLevels = sapply(colData(tse), function(x) paste(levels(x), collapse = ", "))
+    colName  = c("rownames", colnames(df)),
+    colClass = c("character", vapply(df, function(x) class(x)[1], character(1))),
+    fctLevels = c(NA_character_, vapply(df, function(x) {
+      if (is.factor(x)) paste(levels(x), collapse = ", ") else NA_character_
+    }, character(1))),
+    stringsAsFactors = FALSE
   )
+  
+  # readr specs
+  colSpecs.df$readrClass <- substr(colSpecs.df$colClass, 1, 1)
   
   return(colSpecs.df)
 }
+
 
 
 #' Split a `TreeSummarizedExperiment` object into multiple human readable files
@@ -56,49 +85,67 @@ colDataSpecs <- function(tse){
 #' @param out.dir \code{character} specifying the directory in which a new directory
 #' will be generated, with the name of the R object passed to the `tse`
 #' parameter.
-#'
+#' 
+#' @import TreeSummarizedExperiment
 #' @importFrom readr write_tsv
 #' @importFrom jsonlite write_json
-#' @importFrom tibble rownames_to_column
-#' @importFrom TreeSummarizedExperiment rowTree
 #' @importFrom ape write.tree
 #' @importFrom S4Vectors metadata
 #'
-#' @returns Nothing, the main output of this function is multiple .tsv files
+#' @export
+#' 
+#' @returns \code{NULL} - This function writes files on disk
 #'
 #' @examples
-#'  library(TreeSummarizedExperiment)
-#'  data("tinyTree")
-#'
-#'  # the count.mat table
-#'  count.mat <- matrix(rpois(100, 50), nrow = 10)
-#'
-#'  rownames(count.mat) <- c(tinyTree$tip.label)
-#'
-#'  colnames(count.mat) <- paste("C_", 1:10, sep = "_")
-#'
-#'  # The sample information
+#' library(TreeSummarizedExperiment)
+#' data("tinyTree", package = "TreeSummarizedExperiment")
+#' set.seed(1234)
+#' 
+#' # basic assay
+#' count.mat <- matrix(rpois(100, 50), nrow = 10)
+#' rownames(count.mat) <- tinyTree$tip.label
+#' colnames(count.mat) <- paste0("C_", 1:10)
+#' 
+#' # sample data
 #' sampC <- data.frame(
-#'   condition = rep(c("control", "trt"), each = 5),
-#'   gender = sample(x = 1:2, size = 10, replace = TRUE)
-#'   )
-#'
+#'   condition = factor(rep(c("control", "trt"), each = 5), 
+#'                      levels = c("trt", "control")),
+#'   gender = factor(sample(c("male", "female"), size = 10, replace = TRUE),
+#'                   levels = c("male", "female"))
+#' )
 #' rownames(sampC) <- colnames(count.mat)
-#'
-#'  # build a TreeSummarizedExperiment object
-#'  tse <- TreeSummarizedExperiment(
-#'    assays = list("counts" = count.mat),
-#'    colData = sampC,
-#'    rowTree = tinyTree
-#'    )
-#'
-#'  # write the tse
-#'
-#'  set.seed(1234)
-#'
-#'  write_TSE_to_dir_noAltExp(tse, tempdir())
-#'
-#'  list.files(file.path(tempdir(), "tse"), recursive = TRUE)
+#' 
+#' # create rowData
+#' rowData <- DataFrame(
+#' Feature_gr1 = factor(rep(c("blue", "red"), each = 5)),
+#' Feature_gr2 = rep(c(2,3,4,6,1), 2)
+#' )
+#' rownames(rowData) <- rownames(count.mat)
+#' 
+#' # base tse
+#' tse <- TreeSummarizedExperiment(
+#'   assays = list(counts = count.mat),
+#'   colData = sampC,
+#'   rowData = rowData,
+#'   rowTree = tinyTree
+#' )
+#' 
+#' # add altExp
+#' alt_colData <- sampC
+#' alt_colData$altTreat <- rep(0:1, 5)
+#' 
+#' alt_counts <- count.mat[1:5, ]
+#' alt_rowData <- S4Vectors::DataFrame(feature_type = rep("altFeature", 5))
+#' alt_se <- TreeSummarizedExperiment(assays = list(counts = alt_counts), rowData = alt_rowData, colData = alt_colData)
+#' 
+#' altExp(tse, "altSubset") <- alt_se
+#' metadata(tse)$info <- "test_metadata"
+#' 
+#' tmpdir <- file.path(tempdir(), "testTSE")
+#' dir.create(tmpdir)
+#' write_TSE_to_dir_noAltExp(tse, tmpdir)
+#' list.files(tmpdir, recursive = TRUE)
+#' unlink(tmpdir, recursive = TRUE)
 
 write_TSE_to_dir_noAltExp <- function(tse, out.dir) {
   # write the colData
@@ -108,13 +155,17 @@ write_TSE_to_dir_noAltExp <- function(tse, out.dir) {
   )
   # also write column specifications
   write_tsv(
-    colDataSpecs(tse), file.path(out.dir, paste0("colData_colSpecs", ".tsv"))
+    DataFrameSpecs(colData(tse)), file.path(out.dir, paste0("colData_colSpecs", ".tsv"))
   )
   
   # write the rowData
   write_tsv(
     rowData(tse) |> as.data.frame() |> rownames_to_column("rownames"),
     file = file.path(out.dir, paste0("rowData", ".tsv"))
+  )
+  # also write row specifications
+  write_tsv(
+    DataFrameSpecs(rowData(tse)), file.path(out.dir, paste0("rowData_colSpecs", ".tsv"))
   )
   
   # write metadata as json file
@@ -152,9 +203,79 @@ write_TSE_to_dir_noAltExp <- function(tse, out.dir) {
   }
 }
 
+#' Split a `TreeSummarizedExperiment` object into multiple human readable files
+#'
+#' The components are saved into a directory that gets created by this function.
+#' AltExp slot is ignored in this function
+#'
+#' @param tse \code{TreeSummarizedExperiment} object with or without
+#' rowTree and/or colTree
+#' @param out.dir \code{character} specifying the directory in which a new directory
+#' will be generated, with the name of the R object passed to the `tse`
+#' parameter.
+#'
+#' @importFrom readr write_tsv
+#' @importFrom jsonlite write_json
+#' @importFrom tibble rownames_to_column
+#' @importFrom TreeSummarizedExperiment rowTree
+#' @importFrom ape write.tree
+#' @importFrom S4Vectors metadata
+#'
+#' @returns Nothing, the main output of this function is multiple .tsv files
+#' @export
+#' 
+#' @examples
+#' library(TreeSummarizedExperiment)
+#' data("tinyTree", package = "TreeSummarizedExperiment")
+#' set.seed(1234)
+#' 
+#' # basic assay
+#' count.mat <- matrix(rpois(100, 50), nrow = 10)
+#' rownames(count.mat) <- tinyTree$tip.label
+#' colnames(count.mat) <- paste0("C_", 1:10)
+#' 
+#' # sample data
+#' sampC <- data.frame(
+#'   condition = factor(rep(c("control", "trt"), each = 5), 
+#'                      levels = c("trt", "control")),
+#'   gender = factor(sample(c("male", "female"), size = 10, replace = TRUE),
+#'                   levels = c("male", "female"))
+#' )
+#' rownames(sampC) <- colnames(count.mat)
+#' 
+#' # create rowData
+#' rowData <- DataFrame(
+#' Feature_gr1 = factor(rep(c("blue", "red"), each = 5)),
+#' Feature_gr2 = rep(c(2,3,4,6,1), 2)
+#' )
+#' rownames(rowData) <- rownames(count.mat)
+#' 
+#' # base tse
+#' tse <- TreeSummarizedExperiment(
+#'   assays = list(counts = count.mat),
+#'   colData = sampC,
+#'   rowData = rowData,
+#'   rowTree = tinyTree
+#' )
+#' 
+#' # add altExp
+#' alt_colData <- sampC
+#' alt_colData$altTreat <- rep(0:1, 5)
+#' 
+#' alt_counts <- count.mat[1:5, ]
+#' alt_rowData <- S4Vectors::DataFrame(feature_type = rep("altFeature", 5))
+#' alt_se <- TreeSummarizedExperiment(assays = list(counts = alt_counts), rowData = alt_rowData, colData = alt_colData)
+#' 
+#' altExp(tse, "altSubset") <- alt_se
+#' metadata(tse)$info <- "test_metadata"
+#' 
+#' tmpdir <- file.path(tempdir(), "testTSE_complete")
+#' write_TSE_to_dir(tse, tmpdir)
+#' list.files(tmpdir, recursive = TRUE)
+
 write_TSE_to_dir <- function(tse, out.dir){
   if(dir.exists(out.dir)){
-    error("Output directory already exists")
+    stop("Output directory already exists")
   } 
   dir.create(out.dir, recursive = TRUE)
   
@@ -162,24 +283,22 @@ write_TSE_to_dir <- function(tse, out.dir){
   
   if(length(altExpNames(tse)) > 0){
   for(aexp in altExpNames(tse)){
+    tse_aexp <- altExp(tse, aexp)
     
     altexp.outdir <- file.path(out.dir, "altExps", aexp)
     
     if(dir.exists(altexp.outdir)){
-      error("Output directory already exists")
+      stop("Output directory already exists")
     } 
     dir.create(altexp.outdir, recursive = TRUE)
     
-    write_TSE_to_dir_noAltExp(altExp(tse, aexp), out.dir = altexp.outdir)
+    write_TSE_to_dir_noAltExp(tse_aexp, out.dir = altexp.outdir)
     }
     
   # also write loading order, possibly
   writeLines(altExpNames(tse), con = file.path(out.dir, "altExps", "AltExpOrder.txt"), sep = "\n")
   }
 }
-
-
-
 
 #' Read multiple tsv files into a TreeSummarizedExperiment
 #'
@@ -191,93 +310,107 @@ write_TSE_to_dir <- function(tse, out.dir){
 #' @returns A \code{TreeSummarizedExperiment}
 #'
 #' @importFrom readr read_tsv
+#' @importFrom data.table fread
 #' @importFrom tibble column_to_rownames
 #' @importFrom purrr reduce
 #' @importFrom jsonlite read_json
-#'
+#' 
+#' @export
+#' 
 #' @examples
-#'  library(TreeSummarizedExperiment)
-#'  data("tinyTree")
-#'
-#'  # the count.mat table
-#'  count.mat <- matrix(rpois(100, 50), nrow = 10)
-#'
-#'  rownames(count.mat) <- c(tinyTree$tip.label)
-#'
-#'  colnames(count.mat) <- paste("C_", 1:10, sep = "_")
-#'
-#'  # The sample information
+#' library(TreeSummarizedExperiment)
+#' data("tinyTree", package = "TreeSummarizedExperiment")
+#' set.seed(1234)
+#' 
+#' # basic assay
+#' count.mat <- matrix(rpois(100, 50), nrow = 10)
+#' rownames(count.mat) <- tinyTree$tip.label
+#' colnames(count.mat) <- paste0("C_", 1:10)
+#' 
+#' # sample data
 #' sampC <- data.frame(
-#'   condition = rep(c("control", "trt"), each = 5),
-#'   gender = as.numeric(sample(x = 1:2, size = 10, replace = TRUE))
-#'   )
-#'
+#'   condition = factor(rep(c("control", "trt"), each = 5), 
+#'                      levels = c("trt", "control")),
+#'   gender = factor(sample(c("male", "female"), size = 10, replace = TRUE),
+#'                   levels = c("male", "female"))
+#' )
 #' rownames(sampC) <- colnames(count.mat)
-#'
-#'  # build a TreeSummarizedExperiment object
-#'  tse <- TreeSummarizedExperiment(
-#'    assays = list("counts" = count.mat),
-#'    colData = sampC,
-#'    rowTree = tinyTree
-#'    )
-#'  tse <- reorder_taxa_with_phyloTree_labels(tse)
-#'  # save the tse
-#'
-#'  set.seed(1234)
-#'
-#'  write_TSE_to_dir(tse, tempdir())
-#'
-#'  list.files(file.path(tempdir(), "tse"), recursive = TRUE)
-#'
-#'  tse2 <- read_TSE_from_dir(file.path(tempdir(), "tse"))
-#'
-#'  identical(tse, tse2) # FALSE
-#'  all.equal(tse, tse2) # TRUE
-#'  identical(rownames(tse), rownames(tse2)) # TRUE
-#'  identical(colnames(tse), colnames(tse2)) # TRUE
-#'  identical(tse@rowTree$phylo$tip.label, tse2@rowTree$phylo$tip.label) # TRUE
-#'  identical(tse@rowTree$phylo$node.label, tse2@rowTree$phylo$node.label) # TRUE
-#'  identical(
-#'  round(tse@rowTree$phylo$edge.length,10),
-#'  round(tse2@rowTree$phylo$edge.length, 10)
-#'  ) # TRUE, identical at least to the 10th digit
-#'
-#'  identical(assay(tse), assay(tse)) # FALSE, I don't yet know why
-#'  identical(round(assay(tse), 10), round(assay(tse), 10)) # The encoding
-#'  # could be improved, but the matrices are practically the same
+#' 
+#' # create rowData
+#' rowData <- DataFrame(
+#' Feature_gr1 = factor(rep(c("blue", "red"), each = 5)),
+#' Feature_gr2 = rep(c(2,3,4,6,1), 2)
+#' )
+#' rownames(rowData) <- rownames(count.mat)
+#' 
+#' # base tse
+#' tse <- TreeSummarizedExperiment(
+#'   assays = list(counts = count.mat),
+#'   colData = sampC,
+#'   rowData = rowData,
+#'   rowTree = tinyTree
+#' )
+#' 
+#' # add altExp
+#' alt_colData <- sampC
+#' alt_colData$altTreat <- rep(0:1, 5)
+#' 
+#' alt_counts <- count.mat[1:5, ]
+#' alt_rowData <- S4Vectors::DataFrame(feature_type = rep("altFeature", 5))
+#' alt_se <- TreeSummarizedExperiment(assays = list(counts = alt_counts), rowData = alt_rowData, colData = alt_colData)
+#' 
+#' altExp(tse, "altSubset") <- alt_se
+#' metadata(tse)$info <- "test_metadata"
+#' 
+#' tmpdir <- file.path(tempdir(), "testTSE3")
+#' dir.create(tmpdir)
+#' write_TSE_to_dir_noAltExp(tse, tmpdir)
+#' list.files(tmpdir, recursive = TRUE)
+#' 
+#' # re-load tse
+#' tse2 <- read_TSE_from_dir_noAltExp(tmpdir)
+#' tse2
+#' tse3 <- tse
+#' altExp(tse3) <- NULL
+#' all.equal(tse3, tse2)  # TRUE
 
 read_TSE_from_dir_noAltExp <- function(tse.dir) {
   
   # colData
   ## get colClasses and specify them while reading colData
-  colDataSpecs <- read_tsv(
-    file.path(tse.dir, "colData_colSpecs.tsv"), show_col_types = FALSE) 
-    # this is done here because read_tsv may change in the future
-    colDataSpecs$readrClass <- ifelse(colDataSpecs$colClass == "factor", 
-                                       "c", 
-                                       substr(colDataSpecs$colClass, 1, 1)
-                                       )
+  colData_colSpecs <- read.table(
+    file.path(tse.dir, "colData_colSpecs.tsv"), sep = "\t", header = TRUE)
   
   ## read colData and specify colClasses
   colData <- read_tsv(
     file.path(tse.dir, "colData.tsv"),
-    col_types = colDataSpecs$readrClass,
+    col_types = colData_colSpecs$readrClass,
     progress = FALSE
   ) |>
     column_to_rownames("rownames")
   
   ## recode colData factors with correct levels
-  for(col in colDataSpecs$colName[colDataSpecs$colClass == "factor"]){
-    colData[[col]] <- factor(colData[[col]], levels = strsplit(colDataSpecs$fctLevels[colDataSpecs$colName == col], "\\,\\ ")[[1]])
+  for(col in colData_colSpecs$colName[colData_colSpecs$colClass == "factor"]){
+    colData[[col]] <- factor(colData[[col]], levels = strsplit(colData_colSpecs$fctLevels[colData_colSpecs$colName == col], "\\,\\ ")[[1]])
   }
   
   # rowData
+  ## get colClasses and specify them while reading rowData
+  rowData_colSpecs <- read.table(
+    file.path(tse.dir, "rowData_colSpecs.tsv"), sep = "\t", header = TRUE) 
+  
+  ## read rowData and specify colClasses
   rowData <- read_tsv(
     file.path(tse.dir, "rowData.tsv"),
-    progress = FALSE,
-    show_col_types = FALSE
+    col_types = rowData_colSpecs$readrClass,
+    progress = FALSE
   ) |>
     column_to_rownames("rownames")
+  
+  ## recode rowData factors with correct levels
+  for(col in rowData_colSpecs$colName[rowData_colSpecs$colClass == "factor"]){
+    rowData[[col]] <- factor(rowData[[col]], levels = strsplit(rowData_colSpecs$fctLevels[rowData_colSpecs$colName == col], "\\,\\ ")[[1]])
+  }
   
   # metadata as list (if any)
   metadata.list <- tryCatch(
@@ -289,9 +422,7 @@ read_TSE_from_dir_noAltExp <- function(tse.dir) {
   files_assays <- list.files(file.path(tse.dir, "assays"), pattern = "*.tsv", full.names = TRUE)
   
   assays <- lapply(files_assays,
-                   read_tsv,
-                   progress = FALSE,
-                   show_col_types = FALSE) |>
+                   fread) |>
     lapply(column_to_rownames, "rownames") |>
     lapply(as.matrix)
   names(assays) <- gsub(".tsv", "", basename(files_assays), fixed = TRUE)
@@ -329,8 +460,8 @@ read_TSE_from_dir_noAltExp <- function(tse.dir) {
     metadata = metadata.list,
     assays = lapply(assays, function(x)
       x[rows_in_common, cols_in_common, drop = FALSE]),
-    rowData = DataFrame(rowData[rows_in_common, ]),
-    colData = DataFrame(colData[cols_in_common, ]),
+    rowData = DataFrame(rowData[rows_in_common, , drop = FALSE]),
+    colData = DataFrame(colData[cols_in_common, , drop = FALSE]),
     rowTree = rowTree,
     colTree = colTree
   )
@@ -352,70 +483,72 @@ read_TSE_from_dir_noAltExp <- function(tse.dir) {
 #' @export
 #'
 #' @examples
-#'  library(TreeSummarizedExperiment)
-#'  data("tinyTree")
-#'
-#'  # the count.mat table
-#'  count.mat <- matrix(rpois(100, 50), nrow = 10)
-#'
-#'  rownames(count.mat) <- c(tinyTree$tip.label)
-#'
-#'  colnames(count.mat) <- paste("C_", 1:10, sep = "_")
-#'
-#'  # The sample information
+#' library(TreeSummarizedExperiment)
+#' data("tinyTree", package = "TreeSummarizedExperiment")
+#' set.seed(1234)
+#' 
+#' # basic assay
+#' count.mat <- matrix(rpois(100, 50), nrow = 10)
+#' rownames(count.mat) <- tinyTree$tip.label
+#' colnames(count.mat) <- paste0("C_", 1:10)
+#' 
+#' # sample data
 #' sampC <- data.frame(
-#'   condition = rep(c("control", "trt"), each = 5),
-#'   gender = as.numeric(sample(x = 1:2, size = 10, replace = TRUE))
-#'   )
-#'
+#'   condition = factor(rep(c("control", "trt"), each = 5), 
+#'                      levels = c("trt", "control")),
+#'   gender = factor(sample(c("male", "female"), size = 10, replace = TRUE),
+#'                   levels = c("male", "female"))
+#' )
 #' rownames(sampC) <- colnames(count.mat)
-#'
-#'  # build a TreeSummarizedExperiment object
-#'  tse <- TreeSummarizedExperiment(
-#'    assays = list("counts" = count.mat),
-#'    colData = sampC,
-#'    rowTree = tinyTree
-#'    )
-#'  tse <- reorder_taxa_with_phyloTree_labels(tse)
-#'  # save the tse
-#'
-#'  set.seed(1234)
-#'
-#'  write_TSE_to_dir(tse, tempdir())
-#'
-#'  list.files(file.path(tempdir(), "tse"), recursive = TRUE)
-#'
-#'  tse2 <- read_TSE_from_dir(file.path(tempdir(), "tse"))
-#'
-#'  identical(tse, tse2) # FALSE
-#'  all.equal(tse, tse2) # TRUE
-#'  identical(rownames(tse), rownames(tse2)) # TRUE
-#'  identical(colnames(tse), colnames(tse2)) # TRUE
-#'  identical(tse@rowTree$phylo$tip.label, tse2@rowTree$phylo$tip.label) # TRUE
-#'  identical(tse@rowTree$phylo$node.label, tse2@rowTree$phylo$node.label) # TRUE
-#'  identical(
-#'  round(tse@rowTree$phylo$edge.length,10),
-#'  round(tse2@rowTree$phylo$edge.length, 10)
-#'  ) # TRUE, identical at least to the 10th digit
-#'
-#'  identical(assay(tse), assay(tse)) # FALSE, I don't yet know why
-#'  identical(round(assay(tse), 10), round(assay(tse), 10)) # The encoding
-#'  # could be improved, but the matrices are practically the same
+#' 
+#' # create rowData
+#' rowData <- DataFrame(
+#' Feature_gr1 = factor(rep(c("blue", "red"), each = 5)),
+#' Feature_gr2 = rep(c(2,3,4,6,1), 2)
+#' )
+#' rownames(rowData) <- rownames(count.mat)
+#' 
+#' # base tse
+#' tse <- TreeSummarizedExperiment(
+#'   assays = list(counts = count.mat),
+#'   colData = sampC,
+#'   rowData = rowData,
+#'   rowTree = tinyTree
+#' )
+#' 
+#' # add altExp
+#' alt_colData <- sampC
+#' alt_colData$altTreat <- rep(0:1, 5)
+#' 
+#' alt_counts <- count.mat[1:5, ]
+#' alt_rowData <- S4Vectors::DataFrame(feature_type = rep("altFeature", 5))
+#' alt_se <- TreeSummarizedExperiment(assays = list(counts = alt_counts), rowData = alt_rowData, colData = alt_colData)
+#' 
+#' altExp(tse, "altSubset") <- alt_se
+#' metadata(tse)$info <- "test_metadata"
+#' 
+#' tmpdir <- file.path(tempdir(), "testTSE_complete2")
+#' unlink(tmpdir, recursive = TRUE)
+#' write_TSE_to_dir(tse, tmpdir)
+#' list.files(tmpdir, recursive = TRUE)
+#' 
+#' # re-load tse
+#' tse2 <- read_TSE_from_dir(tmpdir)
+#' all.equal(tse, tse2)  # TRUE
 
 read_TSE_from_dir <- function(tse.dir) {
   tse_rebuilt <- read_TSE_from_dir_noAltExp(tse.dir)
   
   if(dir.exists(file.path(tse.dir, "altExps"))){
-    altexps_dirs <- list.dirs(file.path(tse.dir, "altExps"), recursive = FALSE)
+    # get names of the alternate expressions
+    altExpNames <- readLines(file.path(tse.dir, "altExps", "AltExpOrder.txt"))
     
-    altExprs <- lapply(altexps_dirs, function(altexp.dir) read_TSE_from_dir_noAltExp(altexp.dir))
-    
-    exps_order <- readLines(file.path(tse.dir, "altExps", "AltExpOrder.txt"))
-    
-    altExprs <- altExprs[exps_order]
-    altExp(tse_rebuilt) <- altExprs
+    for(x in altExpNames){
+      tse_alt <- read_TSE_from_dir_noAltExp(file.path(tse.dir, "altExps", x))
+      altExp(tse_rebuilt, x) <- tse_alt
+    }
   }
-  
   
   return(tse_rebuilt)
-  }
+  
+}

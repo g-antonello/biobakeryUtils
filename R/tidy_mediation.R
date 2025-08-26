@@ -8,9 +8,10 @@
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' 
 #' #---------- taken from the mediation::mediate first example
-#' 
+#' library(mediation)
 #' b <- lm(job_seek ~ treat + econ_hard + sex + age, data=jobs)
 #' c <- lm(depress2 ~ treat + job_seek + econ_hard + sex + age, data=jobs)
 #' # Estimation via quasi-Bayesian approximation
@@ -19,7 +20,7 @@
 #' 
 #' # summarized as data.frame
 #' tidy_mediation(contcont)
-#' 
+#' }
 tidy_mediation <- function(mediation.model){
   med_summary <- summary(mediation.model)
   results_df <- data.frame(

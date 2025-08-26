@@ -17,53 +17,59 @@ A \code{TreeSummarizedExperiment}
 This utility function is the counterpart of
 }
 \examples{
- library(TreeSummarizedExperiment)
- data("tinyTree")
+library(TreeSummarizedExperiment)
+data("tinyTree", package = "TreeSummarizedExperiment")
+set.seed(1234)
 
- # the count.mat table
- count.mat <- matrix(rpois(100, 50), nrow = 10)
+# basic assay
+count.mat <- matrix(rpois(100, 50), nrow = 10)
+rownames(count.mat) <- tinyTree$tip.label
+colnames(count.mat) <- paste0("C_", 1:10)
 
- rownames(count.mat) <- c(tinyTree$tip.label)
-
- colnames(count.mat) <- paste("C_", 1:10, sep = "_")
-
- # The sample information
+# sample data
 sampC <- data.frame(
-  condition = rep(c("control", "trt"), each = 5),
-  gender = as.numeric(sample(x = 1:2, size = 10, replace = TRUE))
-  )
-
+  condition = factor(rep(c("control", "trt"), each = 5), 
+                     levels = c("trt", "control")),
+  gender = factor(sample(c("male", "female"), size = 10, replace = TRUE),
+                  levels = c("male", "female"))
+)
 rownames(sampC) <- colnames(count.mat)
 
- # build a TreeSummarizedExperiment object
- tse <- TreeSummarizedExperiment(
-   assays = list("counts" = count.mat),
-   colData = sampC,
-   rowTree = tinyTree
-   )
- tse <- reorder_taxa_with_phyloTree_labels(tse)
- # save the tse
+# create rowData
+rowData <- DataFrame(
+Feature_gr1 = factor(rep(c("blue", "red"), each = 5)),
+Feature_gr2 = rep(c(2,3,4,6,1), 2)
+)
+rownames(rowData) <- rownames(count.mat)
 
- set.seed(1234)
+# base tse
+tse <- TreeSummarizedExperiment(
+  assays = list(counts = count.mat),
+  colData = sampC,
+  rowData = rowData,
+  rowTree = tinyTree
+)
 
- write_TSE_to_dir(tse, tempdir())
+# add altExp
+alt_colData <- sampC
+alt_colData$altTreat <- rep(0:1, 5)
 
- list.files(file.path(tempdir(), "tse"), recursive = TRUE)
+alt_counts <- count.mat[1:5, ]
+alt_rowData <- S4Vectors::DataFrame(feature_type = rep("altFeature", 5))
+alt_se <- TreeSummarizedExperiment(assays = list(counts = alt_counts), rowData = alt_rowData, colData = alt_colData)
 
- tse2 <- read_TSE_from_dir(file.path(tempdir(), "tse"))
+altExp(tse, "altSubset") <- alt_se
+metadata(tse)$info <- "test_metadata"
 
- identical(tse, tse2) # FALSE
- all.equal(tse, tse2) # TRUE
- identical(rownames(tse), rownames(tse2)) # TRUE
- identical(colnames(tse), colnames(tse2)) # TRUE
- identical(tse@rowTree$phylo$tip.label, tse2@rowTree$phylo$tip.label) # TRUE
- identical(tse@rowTree$phylo$node.label, tse2@rowTree$phylo$node.label) # TRUE
- identical(
- round(tse@rowTree$phylo$edge.length,10),
- round(tse2@rowTree$phylo$edge.length, 10)
- ) # TRUE, identical at least to the 10th digit
+tmpdir <- file.path(tempdir(), "testTSE3")
+dir.create(tmpdir)
+write_TSE_to_dir_noAltExp(tse, tmpdir)
+list.files(tmpdir, recursive = TRUE)
 
- identical(assay(tse), assay(tse)) # FALSE, I don't yet know why
- identical(round(assay(tse), 10), round(assay(tse), 10)) # The encoding
- # could be improved, but the matrices are practically the same
+# re-load tse
+tse2 <- read_TSE_from_dir_noAltExp(tmpdir)
+tse2
+tse3 <- tse
+altExp(tse3) <- NULL
+all.equal(tse3, tse2)  # TRUE
 }

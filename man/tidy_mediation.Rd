@@ -16,9 +16,10 @@ tidy_mediation(mediation.model)
 Extract summary info from `mediation::mediate` model
 }
 \examples{
+\dontrun{
 
 #---------- taken from the mediation::mediate first example
-
+library(mediation)
 b <- lm(job_seek ~ treat + econ_hard + sex + age, data=jobs)
 c <- lm(depress2 ~ treat + job_seek + econ_hard + sex + age, data=jobs)
 # Estimation via quasi-Bayesian approximation
@@ -27,5 +28,5 @@ summary(contcont)
 
 # summarized as data.frame
 tidy_mediation(contcont)
-
+}
 }
