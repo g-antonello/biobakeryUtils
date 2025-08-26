@@ -1,5 +1,3 @@
-
-
 #' Extract summary info from `mediation::mediate` model
 #'
 #' @param mediation.model \code{mediation} object
@@ -28,7 +26,7 @@ tidy_mediation <- function(mediation.model){
     Estimate = c(med_summary$d.avg, med_summary$z.avg, med_summary$tau.coef, med_summary$n.avg),
     CI_Lower_95 = c(med_summary$d.avg.ci[1], med_summary$z.avg.ci[1], med_summary$tau.ci[1], med_summary$n.avg.ci[1]),
     CI_Upper_95 = c(med_summary$d.avg.ci[2], med_summary$z.avg.ci[2], med_summary$tau.ci[2], med_summary$n.avg.ci[2]),
-    P_Value = c(med_summary$d.avg.p, med_summary$z.avg.p, med_summary$tau.p, med_summary$n.avg.p)
+    P.value = c(med_summary$d.avg.p, med_summary$z.avg.p, med_summary$tau.p, med_summary$n.avg.p)
   )
   
   return(results_df)
