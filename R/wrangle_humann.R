@@ -8,7 +8,7 @@ wrangle_humann <- function(input_table, input_type = "ko"){
   # extract EC information
   EC_only <- tryCatch(sapply(strsplit(featureName, "[", fixed = TRUE), function(x) ifelse(length(x) > 1, gsub("]", "", x[length(x)]), NA)), error = function(e) return(NA))
   # extract enzyme name information
-  enz_name <- tryCatch(sapply(strsplit("K00383: glutathione reductase (NADPH) [EC:1.8.1.7]", "\\:\\ |\\ \\["), "[", 2), error = function(e) return(NA))
+  enz_name <- tryCatch(sapply(strsplit(featureName, "\\:\\ |\\ \\["), "[", 2), error = function(e) return(NA))
   
   # build a data.frame with these data
   description.df <- data.frame(
