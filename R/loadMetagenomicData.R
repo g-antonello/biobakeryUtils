@@ -42,17 +42,21 @@
 
 loadMetagenomicData <- function(cache_table){
   
+  # get files to read from data.frame of cache information
   files_to_read <- cache_table$cache_path
   names(files_to_read) <- cache_table$uuid
   
+  # get run info from the cached files
   runInfo.tb <- getMetaPhlAn_run_info(files_to_read) %>% 
     full_join(select(cache_table, cache_id, uuid), by = "cache_id")
-  # make the colData
+  
+  # make the colData more complete with metaphlan run info
   colData.df <- dplyr::filter(parkinsonsMetagenomicData::sampleMetadata, uuid %in% cache_table$uuid) %>% 
     full_join(runInfo.tb, by = "uuid")
-  colData.df <- colData.df[match(names(runInfo[["reads_processed"]]), colData.df$uuid),]
-  colData.df[["number_reads"]] <- runInfo[["reads_processed"]]
+  
+  # rename rownames and reorder rows as they are found in the cache table
   rownames(colData.df) <- colData.df[["uuid"]]
+  colData.df <- colData.df[cache_table$uuid,]
   
   # find where profiles start (not too necessary, but it's a more flexible check)
   example_line <- readLines(files_to_read[[1]], n = 8)
