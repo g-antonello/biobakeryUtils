@@ -98,7 +98,7 @@ loadMetagenomicData <- function(cache_table){
 #' @param files_to_read A \code{character} vector with the metaphlan profile already 
 #' read into R with readLines
 #'
-#' @returns A \code{list} of MetaPhlAn run information (db version, code, reads)
+#' @returns A \code{tibble} of per-sample MetaPhlAn run information (db version, code, reads)
 #' @export
 #' 
 #' @importFrom readr parse_number

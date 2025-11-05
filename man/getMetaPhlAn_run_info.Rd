@@ -11,7 +11,7 @@ getMetaPhlAn_run_info(files_to_read)
 read into R with readLines}
 }
 \value{
-A \code{list} of MetaPhlAn run information (db version, code, reads)
+A \code{tibble} of per-sample MetaPhlAn run information (db version, code, reads)
 }
 \description{
 Extract run info of a MetaPhlAn run
