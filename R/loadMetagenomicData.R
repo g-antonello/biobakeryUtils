@@ -45,9 +45,11 @@ loadMetagenomicData <- function(cache_table){
   files_to_read <- cache_table$cache_path
   names(files_to_read) <- cache_table$uuid
   
-  runInfo <- getMetaPhlAn_run_info(files_to_read)
+  runInfo.tb <- getMetaPhlAn_run_info(files_to_read) %>% 
+    full_join(select(cache_table, cache_id, uuid), by = "cache_id")
   # make the colData
-  colData.df <- dplyr::filter(parkinsonsMetagenomicData::sampleMetadata, uuid %in% cache_table$uuid)
+  colData.df <- dplyr::filter(parkinsonsMetagenomicData::sampleMetadata, uuid %in% cache_table$uuid) %>% 
+    full_join(runInfo.tb, by = "uuid")
   colData.df <- colData.df[match(names(runInfo[["reads_processed"]]), colData.df$uuid),]
   colData.df[["number_reads"]] <- runInfo[["reads_processed"]]
   rownames(colData.df) <- colData.df[["uuid"]]
@@ -115,21 +117,13 @@ getMetaPhlAn_run_info <- function(files_to_read){
   # read first 8 lines of all files
   fileStats_headers <- lapply(files_to_read, function(filePath) readLines(filePath, 4))
   # extract metaphlan run information first N lines
-  chocophlan_version <- unique(sapply(fileStats_headers, function(x) gsub("#" , "", x[1])))
-  metaphlan_run_command <- unique(sapply(fileStats_headers, function(x) gsub("#" , "", x[2])))
+  chocophlan_version <- sapply(fileStats_headers, function(x) gsub("#" , "", x[1]))
+  metaphlan_run_command <- sapply(fileStats_headers, function(x) gsub("#" , "", x[2]))
   reads_processed <- sapply(fileStats_headers, function(x) readr::parse_number(x[3]))
-  # check that the versions are uniform
-  if(length(chocophlan_version) != 1){
-    stop("Files were not run with one single CHOCOPhlAn database version")
-  } 
-  
-  if(length(metaphlan_run_command) != 1){
-    warning("Files were not run with one single metaphlan command")
-    print(metaphlan_run_command)
-  }
   
   return(
-    list(
+    tibble(
+      "cache_id" = names(chocophlan_version),
       "CHOCOPhlAn_version" = chocophlan_version,
       "MetaPhlAn command" = paste(metaphlan_run_command, collapse = ";"),
       "reads_processed" = reads_processed
