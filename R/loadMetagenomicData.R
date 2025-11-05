@@ -113,7 +113,7 @@ loadMetagenomicData <- function(cache_table){
 getMetaPhlAn_run_info <- function(files_to_read){
   
   # read first 8 lines of all files
-  fileStats_headers <- lapply(files_to_read, function(filePath) readLines(filePath, 8))
+  fileStats_headers <- lapply(files_to_read, function(filePath) readLines(filePath, 4))
   # extract metaphlan run information first N lines
   chocophlan_version <- unique(sapply(fileStats_headers, function(x) gsub("#" , "", x[1])))
   metaphlan_run_command <- unique(sapply(fileStats_headers, function(x) gsub("#" , "", x[2])))
@@ -124,13 +124,14 @@ getMetaPhlAn_run_info <- function(files_to_read){
   } 
   
   if(length(metaphlan_run_command) != 1){
-    stop("Files were not run with one single metaphlan command")
+    warning("Files were not run with one single metaphlan command")
+    print(metaphlan_run_command)
   }
   
   return(
     list(
       "CHOCOPhlAn_version" = chocophlan_version,
-      "MetaPhlAn command" = metaphlan_run_command,
+      "MetaPhlAn command" = paste(metaphlan_run_command, collapse = ";"),
       "reads_processed" = reads_processed
     )
   )
