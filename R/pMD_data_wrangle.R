@@ -151,7 +151,7 @@ pMD_enhance_MetaPhlAn <- function(input.tse, sampleMetadata.df, swap_metadata = 
     
     new_colData <- right_join(sampleMetadata.df, old_colData[, 1:4], by = "uuid") 
     rownames(new_colData) <- new_colData$uuid
-    
+    new_colData <- new_colData[rownames(colData(input.tse)),]
     # replace the colData
     colData(input.tse) <- DataFrame(new_colData)
   }
@@ -228,6 +228,7 @@ pMD_enhance_HUMAnN_pwy <-function(input.tse, sampleMetadata.df, swap_metadata = 
   # replace custom colData. there is no valuable metadata for now from the 
   # HUMAnN header 
   rownames(sampleMetadata.df) <- sampleMetadata.df$uuid
+  sampleMetadata.df <- sampleMetadata.df[rownames(colData(input.tse)),]
   # replace the colData with input data.frame
   colData(input.tse) <- DataFrame(sampleMetadata.df)
   }
@@ -276,6 +277,7 @@ pMD_enhance_HUMAnN_genefam <-function(input.tse, sampleMetadata.df, swap_metadat
   if(swap_metadata){
     # put custom colData separately, but preserve the first 4 columns and use the first 1 to merge
     rownames(sampleMetadata.df) <- sampleMetadata.df$uuid
+    sampleMetadata.df <- sampleMetadata.df[rownames(colData(input.tse)),]
     # replace the colData with input data.frame
     colData(input.tse) <- DataFrame(sampleMetadata.df)
   }
