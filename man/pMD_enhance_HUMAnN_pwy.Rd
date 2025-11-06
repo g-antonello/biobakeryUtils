@@ -4,7 +4,7 @@
 \alias{pMD_enhance_HUMAnN_pwy}
 \title{Enhance HUMAnN unstratified pathways data}
 \usage{
-pMD_enhance_HUMAnN_pwy(input.tse, sampleMetadata.df, swap_metadata = FALSE)
+pMD_enhance_HUMAnN_pwy(input.tse, sampleMetadata.df)
 }
 \arguments{
 \item{input.tse}{\code{TreeSummarizedExperiment}. as it comes out of 
@@ -13,9 +13,6 @@ pMD_enhance_HUMAnN_pwy(input.tse, sampleMetadata.df, swap_metadata = FALSE)
 
 \item{sampleMetadata.df}{\code{data.frame}. A data.frame to swap the default 
 with. NB: it must have a `uuid` column with valid uuids}
-
-\item{swap_metadata}{\code{logical}. Should the default metadata
-be swapped for another. (default = `FALSE`)}
 }
 \value{
 \code{TreeSummarizedExperiment}
@@ -36,7 +33,7 @@ example_metadata.df <- dplyr::filter(sampleMetadata, grepl("Bedarf", study_name)
 # HUMAnN pathways
 tse_basic <- loadParquetData(con = hf_con, data_type = "pathabundance_unstratified", filter_values = list(uuid = example_metadata.df$uuid))
 
-tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "pathabundance_unstratified", swap_metadata = FALSE, addPhyloTree = TRUE)
+tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "pathabundance_unstratified", addPhyloTree = TRUE)
 
 }
 }

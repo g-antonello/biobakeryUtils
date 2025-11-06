@@ -4,12 +4,7 @@
 \alias{pMD_enhance_MetaPhlAn}
 \title{Enhance MetaPhlAn data}
 \usage{
-pMD_enhance_MetaPhlAn(
-  input.tse,
-  sampleMetadata.df,
-  swap_metadata = FALSE,
-  addPhyloTree = TRUE
-)
+pMD_enhance_MetaPhlAn(input.tse, sampleMetadata.df, addPhyloTree = TRUE)
 }
 \arguments{
 \item{input.tse}{\code{TreeSummarizedExperiment}. as it comes out of \code{loadMetagenomcData}
@@ -17,9 +12,6 @@ or \code{returnSamples}}
 
 \item{sampleMetadata.df}{\code{data.frame}. A data.frame to swap the default 
 with. NB: it must have a `uuid` column with valid uuids}
-
-\item{swap_metadata}{\code{logical}. Should the default metadata
-be swapped for another. (default = `FALSE`)}
 
 \item{addPhyloTree}{\code{logical}. Should a phylogenetic `rowTree` be added 
 to the \code{TreeSummarizedExperiment}? Works only with MetaPhlAn input (`data_type = "relative_abundance"`)}
@@ -48,6 +40,6 @@ example_metadata.df <- dplyr::filter(sampleMetadata, grepl("Bedarf", study_name)
 
 tse_basic <- loadParquetData(con = hf_con, data_type = "relative_abundance", filter_values = list(uuid = example_metadata.df$uuid))
 
-tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "relative_abundance", swap_metadata = FALSE, addPhyloTree = TRUE)
+tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "relative_abundance", addPhyloTree = TRUE)
 }
 }

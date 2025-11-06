@@ -14,8 +14,6 @@
 #' \code{loadMetagenomcData} or \code{returnSamples}
 #' @param data_type \code{character}. that got retrieved using 
 #' \code{loadMetagenomcData} or \code{returnSamples}
-#' @param swap_metadata \code{logical}. Should the default metadata
-#' be swapped for another. (default = `FALSE`)
 #' @param addPhyloTree \code{logical}. Should a phylogenetic `rowTree` be added 
 #' to the \code{TreeSummarizedExperiment}? Works only with MetaPhlAn input (`data_type = "relative_abundance"`)
 #' 
@@ -37,36 +35,36 @@
 #' 
 #' tse_basic <- loadParquetData(con = hf_con, data_type = "relative_abundance", filter_values = list(uuid = example_metadata.df$uuid))
 #' 
-#' tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "relative_abundance", swap_metadata = FALSE, addPhyloTree = TRUE)
+#' tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "relative_abundance", addPhyloTree = TRUE)
 #' 
 #' # HUMAnN pathways
 #' tse_basic <- loadParquetData(con = hf_con, data_type = "pathabundance_unstratified", filter_values = list(uuid = example_metadata.df$uuid))
 #' 
-#' tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "pathabundance_unstratified", swap_metadata = FALSE, addPhyloTree = TRUE)
+#' tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "pathabundance_unstratified", addPhyloTree = TRUE)
 #' 
 #' # HUMAnN gene families
 #' tse_basic <- loadParquetData(con = hf_con, data_type = "genefamilies_unstratified", filter_values = list(uuid = example_metadata.df$uuid))
 #' 
-#' tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "genefamilies_unstratified", swap_metadata = FALSE, addPhyloTree = TRUE)
+#' tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "genefamilies_unstratified", addPhyloTree = TRUE)
 #' 
 #' }
 
-pMD_enhance <- function(input.tse, sampleMetadata.df, data_type, swap_metadata = FALSE, addPhyloTree = FALSE){
+pMD_enhance <- function(input.tse, sampleMetadata.df, data_type, addPhyloTree = FALSE){
   if(!any(data_type %in% c("relative_abundance", "pathabundance_unstratified", "genefamilies_unstratified"))){
     warning(sprintf("%s is not yet supported, returning unmodified input", data_type))
     return(input.tse)
   } else{
     
     if(data_type == "relative_abundance"){
-      return(pMD_enhance_MetaPhlAn(input.tse, sampleMetadata.df, swap_metadata, addPhyloTree))
+      return(pMD_enhance_MetaPhlAn(input.tse, sampleMetadata.df, addPhyloTree))
     }
     
     if(data_type == "pathabundance_unstratified"){
-      return(pMD_enhance_HUMAnN_pwy(input.tse, sampleMetadata.df, swap_metadata))
+      return(pMD_enhance_HUMAnN_pwy(input.tse, sampleMetadata.df))
     }
     
     if(data_type == "genefamilies_unstratified"){
-      return(pMD_enhance_HUMAnN_genefam(input.tse, sampleMetadata.df, swap_metadata))
+      return(pMD_enhance_HUMAnN_genefam(input.tse, sampleMetadata.df))
     }
   }
 }
@@ -81,8 +79,6 @@ pMD_enhance <- function(input.tse, sampleMetadata.df, data_type, swap_metadata =
 #' with. NB: it must have a `uuid` column with valid uuids
 #' @param data_type \code{character}. that got retrieved using 
 #' \code{loadMetagenomcData} or \code{returnSamples}
-#' @param swap_metadata \code{logical}. Should the default metadata
-#' be swapped for another. (default = `FALSE`)
 #' @param addPhyloTree \code{logical}. Should a phylogenetic `rowTree` be added 
 #' to the \code{TreeSummarizedExperiment}? Works only with MetaPhlAn input (`data_type = "relative_abundance"`)
 #' 
@@ -104,25 +100,25 @@ pMD_enhance <- function(input.tse, sampleMetadata.df, data_type, swap_metadata =
 #' 
 #' tse_basic <- loadParquetData(con = hf_con, data_type = "relative_abundance", filter_values = list(uuid = example_metadata.df$uuid))
 #' 
-#' tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "relative_abundance", swap_metadata = FALSE, addPhyloTree = TRUE)
+#' tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "relative_abundance", addPhyloTree = TRUE)
 #' }
 
-pMD_enhance_MetaPhlAn <- function(input.tse, sampleMetadata.df, swap_metadata = FALSE, addPhyloTree = TRUE){
-
+pMD_enhance_MetaPhlAn <- function(input.tse, sampleMetadata.df, addPhyloTree = TRUE){
+  
   # filter input.tse to have only t__SGB level data, all columns of the Assay should sum to 100 at the 5th precision digit
   # first add the exception of UNCLASSIFIED, which should be added as it is to the lowest levels
   input.tse <- input.tse[!is.na(rowData(input.tse)$clade_name_terminal) | rowData(input.tse)$clade_name_kingdom == "UNCLASSIFIED",]
   
   # then keep only the first useful columns and rename them, put the rest in metadata
   new_rowData <- rowData(input.tse) %>% 
-  as.data.frame()
-
+    as.data.frame()
+  
   new_rowData_wanted_part <- select(new_rowData, clade_name_kingdom:clade_name_terminal) %>% 
-  dplyr::rename_all(.funs = function(x) {
-    gsub("clade_name_", "", x) %>% 
-      tools::toTitleCase()
-  }) %>% 
-  dplyr::rename(SGB = Terminal)
+    dplyr::rename_all(.funs = function(x) {
+      gsub("clade_name_", "", x) %>% 
+        tools::toTitleCase()
+    }) %>% 
+    dplyr::rename(SGB = Terminal)
   
   # Fill UNCLASSIFIED row all with UNCLASSIFIED
   new_rowData_wanted_part["UNCLASSIFIED",] <- paste(c("k", "p", "c", "o", "f", "g", "s", "t"), "UNCLASSIFIED", sep = "__")
@@ -143,19 +139,7 @@ pMD_enhance_MetaPhlAn <- function(input.tse, sampleMetadata.df, swap_metadata = 
   
   # clean metaphlan command function
   colnames(input.tse@colData)[which(grepl("command", colnames(input.tse@colData)))] <- "metaphlan_command"
-  if(swap_metadata) {
-    # put custom colData separately, but preserve the first 4 columns and use the first 1 to merge
-    rownames(sampleMetadata.df) <- sampleMetadata.df$uuid
-    old_colData <- as.data.frame(colData(input.tse)) %>% 
-      select(uuid, db_version, number_reads, metaphlan_command)
-    
-    new_colData <- right_join(sampleMetadata.df, old_colData[, 1:4], by = "uuid") 
-    rownames(new_colData) <- new_colData$uuid
-    new_colData <- new_colData[rownames(colData(input.tse)),]
-    # replace the colData
-    colData(input.tse) <- DataFrame(new_colData)
-  }
-
+  
   # calculate and organize alternative useful assays
   assayNames(input.tse) <- "percent"
   assay(input.tse, "relabundance") <- assay(input.tse)/100
@@ -188,8 +172,6 @@ pMD_enhance_MetaPhlAn <- function(input.tse, sampleMetadata.df, swap_metadata = 
 #' `data_type = "pathabundance_unstratified"`
 #' @param sampleMetadata.df \code{data.frame}. A data.frame to swap the default 
 #' with. NB: it must have a `uuid` column with valid uuids
-#' @param swap_metadata \code{logical}. Should the default metadata
-#' be swapped for another. (default = `FALSE`)
 #' 
 #' @returns \code{TreeSummarizedExperiment}
 #' @export
@@ -207,11 +189,11 @@ pMD_enhance_MetaPhlAn <- function(input.tse, sampleMetadata.df, swap_metadata = 
 #' # HUMAnN pathways
 #' tse_basic <- loadParquetData(con = hf_con, data_type = "pathabundance_unstratified", filter_values = list(uuid = example_metadata.df$uuid))
 #' 
-#' tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "pathabundance_unstratified", swap_metadata = FALSE, addPhyloTree = TRUE)
+#' tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "pathabundance_unstratified", addPhyloTree = TRUE)
 #' 
 #' }
 
-pMD_enhance_HUMAnN_pwy <-function(input.tse, sampleMetadata.df, swap_metadata = FALSE){
+pMD_enhance_HUMAnN_pwy <-function(input.tse, sampleMetadata.df){
   
   # fix rowData and rownames a little
   new_rowData <- rowData(input.tse) %>% 
@@ -222,16 +204,6 @@ pMD_enhance_HUMAnN_pwy <-function(input.tse, sampleMetadata.df, swap_metadata = 
   rowData(input.tse) <- DataFrame(new_rowData)
   # rename rownames for better compatibility
   rownames(input.tse) <- rowData(input.tse)$MetaCyc_code_safeName
-  
-  
-  if(swap_metadata){
-  # replace custom colData. there is no valuable metadata for now from the 
-  # HUMAnN header 
-  rownames(sampleMetadata.df) <- sampleMetadata.df$uuid
-  sampleMetadata.df <- sampleMetadata.df[rownames(colData(input.tse)),]
-  # replace the colData with input data.frame
-  colData(input.tse) <- DataFrame(sampleMetadata.df)
-  }
   
   # re-derive transformations
   assay(input.tse, "relabundance") <- apply(assay(input.tse), 2, function(x) x/sum(x))
@@ -249,8 +221,6 @@ pMD_enhance_HUMAnN_pwy <-function(input.tse, sampleMetadata.df, swap_metadata = 
 #' `data_type = "genefamilies_unstratified"`
 #' @param sampleMetadata.df \code{data.frame}. A data.frame to swap the default 
 #' with. NB: it must have a `uuid` column with valid uuids
-#' @param swap_metadata \code{logical}. Should the default metadata
-#' be swapped for another. (default = `FALSE`)
 #' 
 #' @returns \code{TreeSummarizedExperiment}
 #' @export
@@ -268,19 +238,11 @@ pMD_enhance_HUMAnN_pwy <-function(input.tse, sampleMetadata.df, swap_metadata = 
 #' # HUMAnN gene families
 #' tse_basic <- loadParquetData(con = hf_con, data_type = "genefamilies_unstratified", filter_values = list(uuid = example_metadata.df$uuid))
 #' 
-#' tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "genefamilies_unstratified", swap_metadata = FALSE, addPhyloTree = TRUE)
+#' tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "genefamilies_unstratified", addPhyloTree = TRUE)
 #' 
 #' }
 
-pMD_enhance_HUMAnN_genefam <-function(input.tse, sampleMetadata.df, swap_metadata = FALSE){
-  
-  if(swap_metadata){
-    # put custom colData separately, but preserve the first 4 columns and use the first 1 to merge
-    rownames(sampleMetadata.df) <- sampleMetadata.df$uuid
-    sampleMetadata.df <- sampleMetadata.df[rownames(colData(input.tse)),]
-    # replace the colData with input data.frame
-    colData(input.tse) <- DataFrame(sampleMetadata.df)
-  }
+pMD_enhance_HUMAnN_genefam <-function(input.tse, sampleMetadata.df){
   
   # re-derive transformations
   assay(input.tse, "relabundance") <- apply(assay(input.tse), 2, function(x) x/sum(x))
@@ -289,3 +251,54 @@ pMD_enhance_HUMAnN_genefam <-function(input.tse, sampleMetadata.df, swap_metadat
   return(input.tse)
 }
 
+#' Replace colData of a (Tree)SummarizedExperiment
+#' 
+#' A pipe-friendly wrapper to replace colData from a (Tree)SummarizedExperiment.
+#' By design, if a new colData with more samples is provided, only those that map
+#' to input.se are inserted in the colData slot.
+#'
+#' @param input.se \code{(Tree)SummarizedExperiment} 
+#' @param new.df \code{data.frame or DataFrame} with rownames corresponding to 
+#' rownames in `rownames(colData(input.se))`. The correct order is coerced.
+#'
+#' @returns \code{(Tree)SummarizedExperiment} with replaced colData
+#' @export
+#'
+#' @examples
+#' \dontrun{
+#' library(parkinsonsMetagenomicData)
+#' 
+#' data_types <- c("relative_abundance", "pathabundance_unstratified", "genefamilies_unstratified")
+#' 
+#' hf_con <- accessParquetData(data_types = data_types)
+#' 
+#' example_metadata.df <- dplyr::filter(sampleMetadata, grepl("Bedarf", study_name))
+#' 
+#' example_metadata.df$ABC_Var <- factor(sample(1:0, nrow(example_metadata.df), replace = TRUE))
+#' rownames(example_metadata.df) <- example_metadata.df$uuid
+#' 
+#' # HUMAnN gene families
+#' tse_basic <- loadParquetData(
+#'   con = hf_con, 
+#'   data_type = "genefamilies_unstratified", 
+#'   filter_values = list(uuid = example_metadata.df$uuid)
+#' )
+#' 
+#' "ABC_Var" %in% colnames(colData(tse_basic))
+#' 
+#' tse_newColData <- tse_basic %>%
+#'   replace_colData(  new.df = example_metadata.df)
+#'
+#' "ABC_Var" %in% colnames(colData(tse_newColData))
+#'   
+#' }
+
+replace_colData <- function(input.se, new.df){
+  
+  if(!all(rownames(colData(input.se)) %in% rownames(new.df))){
+    stop("some rownames of old colData are missing from the new colData")
+  }
+  
+  colData(input.se) <- DataFrame(new.df[rownames(colData(input.se)),])
+  return(input.se)
+}
