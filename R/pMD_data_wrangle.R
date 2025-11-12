@@ -74,11 +74,9 @@ pMD_enhance <- function(input.tse, sampleMetadata.df, data_type, addPhyloTree = 
 #' Enhance MetaPhlAn data
 #'
 #' @param input.tse \code{TreeSummarizedExperiment}. as it comes out of \code{loadMetagenomcData}
-#' or \code{returnSamples}
+#' or \code{returnSamples} and `data_type = 'relabundance'`
 #' @param sampleMetadata.df \code{data.frame}. A data.frame to swap the default 
 #' with. NB: it must have a `uuid` column with valid uuids
-#' @param data_type \code{character}. that got retrieved using 
-#' \code{loadMetagenomcData} or \code{returnSamples}
 #' @param addPhyloTree \code{logical}. Should a phylogenetic `rowTree` be added 
 #' to the \code{TreeSummarizedExperiment}? Works only with MetaPhlAn input (`data_type = "relative_abundance"`)
 #' 
