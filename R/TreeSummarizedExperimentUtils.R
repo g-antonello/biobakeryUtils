@@ -309,7 +309,6 @@ write_TSE_to_dir <- function(tse, out.dir){
 #'
 #' @returns A \code{TreeSummarizedExperiment}
 #'
-#' @importFrom readr read_tsv
 #' @importFrom data.table fread
 #' @importFrom tibble column_to_rownames
 #' @importFrom purrr reduce
@@ -378,14 +377,17 @@ read_TSE_from_dir_noAltExp <- function(tse.dir) {
   
   # colData
   ## get colClasses and specify them while reading colData
-  colData_colSpecs <- read.table(
+  colData_colSpecs <- fread(
     file.path(tse.dir, "colData_colSpecs.tsv"), sep = "\t", header = TRUE)
   
+  colClasses <- colData_colSpecs$colClass
+  names(colClasses) <- colData_colSpecs$colName
+  
   ## read colData and specify colClasses
-  colData <- read_tsv(
-    file.path(tse.dir, "colData.tsv"),
-    col_types = colData_colSpecs$readrClass,
-    progress = FALSE
+  colData <- fread(
+    file = file.path(tse.dir, "colData.tsv"),
+    sep = "\t",
+    colClasses = colClasses
   ) |>
     column_to_rownames("rownames")
   
@@ -396,14 +398,16 @@ read_TSE_from_dir_noAltExp <- function(tse.dir) {
   
   # rowData
   ## get colClasses and specify them while reading rowData
-  rowData_colSpecs <- read.table(
-    file.path(tse.dir, "rowData_colSpecs.tsv"), sep = "\t", header = TRUE) 
+  rowData_colSpecs <- fread(
+    file = file.path(tse.dir, "rowData_colSpecs.tsv"), sep = "\t", header = TRUE) 
+  
+  colClasses <- rowData_colSpecs$colClass
+  names(colClasses) <- rowData_colSpecs$colName
   
   ## read rowData and specify colClasses
-  rowData <- read_tsv(
-    file.path(tse.dir, "rowData.tsv"),
-    col_types = rowData_colSpecs$readrClass,
-    progress = FALSE
+  rowData <- fread(
+    file = file.path(tse.dir, "rowData.tsv"),
+    colClasses = colClasses
   ) |>
     column_to_rownames("rownames")
   

@@ -7,7 +7,7 @@
 #' summary stats in columns
 #' 
 #' @importFrom tibble tibble rownames_to_column
-#' @importFrom TreeSummarizedExperiment assay assayNames
+#' @importFrom SummarizedExperiment assay assayNames
 #' 
 #' @export
 #'
