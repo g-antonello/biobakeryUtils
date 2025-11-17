@@ -59,6 +59,11 @@ pMD_enhance <- function(input.tse, sampleMetadata.df, data_type, addPhyloTree = 
     # data and merges assays together
     assay(input.tse)[is.na(assay(input.tse))] <- 0
     
+    
+    # Fix cases of columns that contain tab character, replace '\t' with '  '
+    # as far as I know, only metaphlan headers have this issue
+    colData(input.tse) <- DataFrame(apply(colData(input.tse), 2, function(x) gsub("\t", "  ", x)))
+    
     # call specific function
     if(data_type == "relative_abundance"){
       return(pMD_enhance_MetaPhlAn(input.tse, sampleMetadata.df, addPhyloTree = addPhyloTree))
