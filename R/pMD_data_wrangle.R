@@ -55,8 +55,13 @@ pMD_enhance <- function(input.tse, sampleMetadata.df, data_type, addPhyloTree = 
     return(input.tse)
   } else{
     
+    # fix potential NAs that arise when parkinsonsMetagenomicData retrieves
+    # data and merges assays together
+    assay(input.tse)[is.na(assay(input.tse))] <- 0
+    
+    # call specific function
     if(data_type == "relative_abundance"){
-      return(pMD_enhance_MetaPhlAn(input.tse, sampleMetadata.df, addPhyloTree))
+      return(pMD_enhance_MetaPhlAn(input.tse, sampleMetadata.df, addPhyloTree = addPhyloTree))
     }
     
     if(data_type == "pathabundance_unstratified"){
