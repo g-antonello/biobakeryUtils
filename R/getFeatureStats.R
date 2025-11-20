@@ -36,9 +36,9 @@ getFeatureStats <- function(tse, assay.type = NULL){
       N = length(x), 
       N_zero = sum(x == 0), 
       N_not_zero = sum(x != 0), 
-      Mean = mean(x), 
-      Median = median(x), 
       Min = min(x), 
+      Median = median(x), 
+      Mean = mean(x), 
       Max = max(x)
     )))))
   
