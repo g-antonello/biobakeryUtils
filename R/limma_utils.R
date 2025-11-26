@@ -56,7 +56,7 @@ limmaFit_TSE <- function(tse, assay.type, formula, coef){
   final_df <- merge(rowData_with_Stats.df, lmFit_table, by = "feature")
   final_df$SE <- (final_df$CI.R - final_df$CI.L)/(1.96*2)
   # Reorganize columns
-  final_df <- final_df[, c(colnames(rowData_with_Stats.df), "logFC","t", "B", "CI.L", "CI.R", "P.Value", "adj.P.Val")]
+  final_df <- final_df[, c(colnames(rowData_with_Stats.df), "logFC","SE", "t", "B", "CI.L", "CI.R", "P.Value", "adj.P.Val")]
   colnames(final_df) <- c(colnames(rowData_with_Stats.df), "Beta","SE", "t_stat", "B_stat", "CI.L", "CI.R", "P.Value", "adj.P.Value")
   
   # remove merging column
