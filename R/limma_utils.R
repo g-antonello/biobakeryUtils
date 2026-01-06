@@ -36,7 +36,7 @@ limmaFit_TSE <- function(tse, assay.type, formula, coef, p.adj_method = "BH"){
   rowData.df <- as.data.frame(rowData(tse))
   rowData.df$FeatureID <- rownames(rowData.df)
   
-  compositionalStats <- getFeatureIDStats(tse, assayNames(tse)[1])
+  compositionalStats <- getFeatureStats(tse, assayNames(tse)[1])
   compositionalStats$FeatureID <- rownames(compositionalStats)
   
   rowData_with_Stats.df <- merge(rowData.df, compositionalStats, by = "FeatureID")
