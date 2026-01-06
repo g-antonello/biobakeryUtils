@@ -11,7 +11,9 @@
 #' @param formula \code{formula}. Model to pass to `model.matrix` before lmFit
 #' @param coef \code{character}. the coefficient as seen in one of `limma$coef` 
 #' columns. This is not so generalizable yet
-#'
+#' 
+#' @importFrom limma lmFit ebayes topTable
+#' 
 #' @returns a \code{data.frame} with a lot of feature information along with 
 #' limma's summary statistics
 #' 
@@ -25,23 +27,19 @@
 #' 
 #' str(limmaResults)
 
-limmaFit_TSE <- function(tse, assay.type, formula, coef){
+limmaFit_TSE <- function(tse, assay.type, formula, coef, p.adj_method = "BH"){
   if(is.null(assay.type)){
     assay.type = assayNames(tse)[1]
   }
   
-  if(is.null(coef)){
-    stop("coef not provided but necessary for table extraction")
-  }
-  
   # Calculate preliminary stats and colmns to add to output later
   rowData.df <- as.data.frame(rowData(tse))
-  rowData.df$feature <- rownames(rowData.df)
+  rowData.df$FeatureID <- rownames(rowData.df)
   
-  compositionalStats <- getFeatureStats(tse, assayNames(tse)[1])
-  compositionalStats$feature <- rownames(compositionalStats)
+  compositionalStats <- getFeatureIDStats(tse, assayNames(tse)[1])
+  compositionalStats$FeatureID <- rownames(compositionalStats)
   
-  rowData_with_Stats.df <- merge(rowData.df, compositionalStats, by = "feature")
+  rowData_with_Stats.df <- merge(rowData.df, compositionalStats, by = "FeatureID")
   
   # calculate limma model
   
@@ -50,17 +48,18 @@ limmaFit_TSE <- function(tse, assay.type, formula, coef){
   lmFitBasic <- lmFit(assay(tse, assay.type), design = modMtx)
   lmFitBasic <- eBayes(lmFitBasic)
   
-  lmFit_table <- topTable(lmFitBasic, coef = coef, number = Inf, confint = TRUE, adjust.method = "BH")
-  lmFit_table$feature <- rownames(lmFit_table)
+  if(!(coef %in% colnames(lmFitBasic$coefficients))){
+    stop(paste("coef parameter must be one of ", paste(colnames(lmFitBasic$coefficients), collapse = "; ")))
+  }
   
-  final_df <- merge(rowData_with_Stats.df, lmFit_table, by = "feature")
+  lmFit_table <- topTable(lmFitBasic, coef = coef, number = Inf, confint = TRUE, adjust.method = p.adj_method)
+  lmFit_table$FeatureID <- rownames(lmFit_table)
+  
+  final_df <- merge(rowData_with_Stats.df, lmFit_table, by = "FeatureID")
   final_df$SE <- (final_df$CI.R - final_df$CI.L)/(1.96*2)
   # Reorganize columns
   final_df <- final_df[, c(colnames(rowData_with_Stats.df), "logFC","SE", "t", "B", "CI.L", "CI.R", "P.Value", "adj.P.Val")]
-  colnames(final_df) <- c(colnames(rowData_with_Stats.df), "Beta","SE", "t_stat", "B_stat", "CI.L", "CI.R", "P.Value", "adj.P.Value")
-  
-  # remove merging column
-  final_df$feature <- NULL
+  colnames(final_df) <- c(colnames(rowData_with_Stats.df), "Beta","SE", "t_stat", "B_stat", "CI.L", "CI.R", "P.Value", paste0("P.Value.adj.", p.adj_method))
   
   return(final_df)
 }

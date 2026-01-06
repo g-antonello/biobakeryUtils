@@ -4,7 +4,7 @@
 \alias{limmaFit_TSE}
 \title{limma wrapper for biobakery data in TreeSummarizedExperiment format}
 \usage{
-limmaFit_TSE(tse, assay.type, formula, coef)
+limmaFit_TSE(tse, assay.type, formula, coef, p.adj_method = "BH")
 }
 \arguments{
 \item{tse}{\code{(Tree)SummarizedExperiment}. Input data with available rowData}
