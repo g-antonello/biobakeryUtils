@@ -12,7 +12,7 @@
 #' @param coef \code{character}. the coefficient as seen in one of `limma$coef` 
 #' columns. This is not so generalizable yet
 #' 
-#' @importFrom limma lmFit ebayes topTable
+#' @importFrom limma lmFit eBayes topTable
 #' 
 #' @returns a \code{data.frame} with a lot of feature information along with 
 #' limma's summary statistics
