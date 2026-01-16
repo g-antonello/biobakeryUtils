@@ -84,7 +84,7 @@ pMD_enhance <- function(input.tse, sampleMetadata.df, data_type, addPhyloTree = 
 #' Enhance MetaPhlAn data
 #'
 #' @param input.tse \code{TreeSummarizedExperiment}. as it comes out of \code{loadMetagenomcData}
-#' or \code{returnSamples} and `data_type = 'relabundance'`
+#' or \code{returnSamples} and `data_type = 'relative_abundance'`
 #' @param sampleMetadata.df \code{data.frame}. A data.frame to swap the default 
 #' with. NB: it must have a `uuid` column with valid uuids
 #' @param addPhyloTree \code{logical}. Should a phylogenetic `rowTree` be added 
@@ -150,8 +150,8 @@ pMD_enhance_MetaPhlAn <- function(input.tse, sampleMetadata.df, addPhyloTree = T
   
   # calculate and organize alternative useful assays
   assayNames(input.tse) <- "percent"
-  assay(input.tse, "relabundance") <- assay(input.tse)/100
-  assay(input.tse, "counts") <- t(apply(assay(input.tse, "relabundance"), 1, function(x) x * input.tse@colData$number_reads))
+  assay(input.tse, "relative_abundance") <- assay(input.tse)/100
+  assay(input.tse, "counts") <- t(apply(assay(input.tse, "relative_abundance"), 1, function(x) x * input.tse@colData$number_reads))
   
   # reorder the assays so that relative abundance [0.1]
   # comes before the percent (default MetaPhlAn output)
@@ -214,8 +214,8 @@ pMD_enhance_HUMAnN_pwy <-function(input.tse, sampleMetadata.df){
   rownames(input.tse) <- rowData(input.tse)$MetaCyc_code_safeName
   
   # re-derive transformations
-  assay(input.tse, "relabundance") <- apply(assay(input.tse), 2, function(x) x/sum(x))
-  assay(input.tse, "cpm") <- apply(assay(input.tse, "relabundance"), 2, function(x) x*10^6)
+  assay(input.tse, "relative_abundance") <- apply(assay(input.tse), 2, function(x) x/sum(x))
+  assay(input.tse, "cpm") <- apply(assay(input.tse, "relative_abundance"), 2, function(x) x*10^6)
   
   return(input.tse)
 }
@@ -253,8 +253,8 @@ pMD_enhance_HUMAnN_pwy <-function(input.tse, sampleMetadata.df){
 pMD_enhance_HUMAnN_genefam <-function(input.tse, sampleMetadata.df){
   
   # re-derive transformations
-  assay(input.tse, "relabundance") <- apply(assay(input.tse), 2, function(x) x/sum(x))
-  assay(input.tse, "cpm") <- apply(assay(input.tse, "relabundance"), 2, function(x) x*10^6)
+  assay(input.tse, "relative_abundance") <- apply(assay(input.tse), 2, function(x) x/sum(x))
+  assay(input.tse, "cpm") <- apply(assay(input.tse, "relative_abundance"), 2, function(x) x*10^6)
   
   return(input.tse)
 }
