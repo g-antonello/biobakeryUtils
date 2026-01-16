@@ -62,7 +62,7 @@ DataFrameSpecs <- function(df) {
     colName  = c("rownames", colnames(df)),
     colClass = c("character", vapply(df, function(x) class(x)[1], character(1))),
     fctLevels = c(NA_character_, vapply(df, function(x) {
-      if (is.factor(x)) paste(levels(x), collapse = ", ") else NA_character_
+      if (is.factor(x)) paste(levels(x), collapse = ";") else NA_character_
     }, character(1))),
     stringsAsFactors = FALSE
   )
@@ -413,7 +413,7 @@ read_TSE_from_dir_noAltExp <- function(tse.dir) {
   
   ## recode rowData factors with correct levels
   for(col in rowData_colSpecs$colName[rowData_colSpecs$colClass == "factor"]){
-    rowData[[col]] <- factor(rowData[[col]], levels = strsplit(rowData_colSpecs$fctLevels[rowData_colSpecs$colName == col], "\\,\\ ")[[1]])
+    rowData[[col]] <- factor(rowData[[col]], levels = strsplit(rowData_colSpecs$fctLevels[rowData_colSpecs$colName == col], ";|\\,\\ ")[[1]])
   }
   
   # metadata as list (if any)
