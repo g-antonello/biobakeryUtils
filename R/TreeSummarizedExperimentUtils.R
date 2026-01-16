@@ -393,7 +393,7 @@ read_TSE_from_dir_noAltExp <- function(tse.dir) {
   
   ## recode colData factors with correct levels
   for(col in colData_colSpecs$colName[colData_colSpecs$colClass == "factor"]){
-    colData[[col]] <- factor(colData[[col]], levels = strsplit(colData_colSpecs$fctLevels[colData_colSpecs$colName == col], "\\,\\ ")[[1]])
+    colData[[col]] <- factor(colData[[col]], levels = strsplit(colData_colSpecs$fctLevels[colData_colSpecs$colName == col], ";|\\,\\ ")[[1]])
   }
   
   # rowData
