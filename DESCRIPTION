@@ -1,7 +1,7 @@
 Package: biobakeryUtils
 Type: Package
 Title: Manipulate and Analyze Data from the BioBakery Suite
-Version: 0.5.0
+Version: 0.6.0
 Authors@R: person("Giacomo", "Antonello",
                   email = "giacomoantonello1@gmail.com",
                   role = c("aut", "cre"))
