@@ -4,16 +4,16 @@
 \alias{search_nearest_taxa}
 \title{Find phylogenetically closest taxa to a target}
 \usage{
-search_nearest_taxa(phyloTree, target_SGB, taxonomy_sep = "|")
+search_nearest_taxa(target_SGB, phyloTree, taxonomy_sep = "|")
 }
 \arguments{
+\item{target_SGB}{\code{character} with SGB name either as "t__SGB12345" or 
+as full taxonomy.}
+
 \item{phyloTree}{\code{phylo} tree that can be handled by `ape` and 
 `tidytree` CRAN packages. IMPORTANT: So far, this function was thought to
  work on full taxonomy as tip labels. So before extracting the phyloTree,
  please run `rename_rownames.tse(your_data.tse, collapse_taxonomy(as.data.frame(rowData(your_data.tse))))`}
-
-\item{target_SGB}{\code{character} with SGB name either as "t__SGB12345" or 
-as full taxonomy.}
 
 \item{taxonomy_sep}{\code{character} specifying the separation character used
 in the tree's tip labels. Default is "|"}

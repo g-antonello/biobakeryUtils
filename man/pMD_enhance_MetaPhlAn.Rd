@@ -8,7 +8,7 @@ pMD_enhance_MetaPhlAn(input.tse, sampleMetadata.df, addPhyloTree = TRUE)
 }
 \arguments{
 \item{input.tse}{\code{TreeSummarizedExperiment}. as it comes out of \code{loadMetagenomcData}
-or \code{returnSamples} and `data_type = 'relabundance'`}
+or \code{returnSamples} and `data_type = 'relative_abundance'`}
 
 \item{sampleMetadata.df}{\code{data.frame}. A data.frame to swap the default 
 with. NB: it must have a `uuid` column with valid uuids}
