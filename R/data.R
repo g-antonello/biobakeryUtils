@@ -1,16 +1,17 @@
-#' A vector of taxonomies and their typical prefixes in metaphlan
+#' Bedarf et al. MetaPhlAn relative abundance data
 #'
-#' This vector contains taxonomies from Kingdom to SGB level. the vector is
-#' generated as : all_taxonomy_levels <- c( k__ = "Kingdom", p__ = "Phylum",
-#'   c__ = "Class", o__ = "Order", f__ = "Family", g__ = "Genus", 
-#'  s__ = "Species", t__ = "SGB")
-# 
-# save(all_taxonomy_levels, file = "data/all_taxonomy_levels.rda")
+#' A TreeSummarizedExperiment containing MetaPhlAn relative abundance
+#' profiles from the Bedarf study, retrieved via parkinsonsMetagenomicData.
+#'
+#' @format A \code{TreeSummarizedExperiment} object.
+#' @source \code{parkinsonsMetagenomicData} Bioconductor package.
+"Bedarf_pMD_raw_MetaPhlAn.tse"
 
-#' 
-#' @format A character vector with 8 elements:
-#' \describe{
-#'   \item{all_taxonomy_levels}{The taxonomy level with capitalized 1st letter}
-#' }
-"all_taxonomy_levels"
-
+#' Bedarf et al. HUMAnN pathway abundance data (unstratified)
+#'
+#' A TreeSummarizedExperiment containing HUMAnN pathabundance_unstratified
+#' profiles from the Bedarf study, retrieved via parkinsonsMetagenomicData.
+#'
+#' @format A \code{TreeSummarizedExperiment} object.
+#' @source \code{parkinsonsMetagenomicData} Bioconductor package.
+"Bedarf_pMD_raw_HUMAnN_pwy.tse"

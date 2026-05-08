@@ -9,7 +9,7 @@ add_taxonomy_to_maaslin3(maaslin3_res, input.tse, taxLevel = "Guess")
 \arguments{
 \item{maaslin3_res}{\code{maaslin3 raw output list} after running the model.}
 
-\item{input.tse}{The \code{TreeSummarizedExperiment} microbiome input data 
+\item{input.tse}{The \code{(Tree)SummarizedExperiment} microbiome input data 
 used for modeling}
 
 \item{taxLevel}{\code{character} specifying the taxonomic level. Default is 
@@ -22,8 +22,7 @@ results following. Taxa not tested are also included for completeness.
 }
 \description{
 This function adds taxonomies to raw maaslin3 results by using the original
-input `TreeSummarizedExperiment` microbiome input data. So far, it is designed
-to work only with MetaPhlAn4 output tables
+input `(Tree)SummarizedExperiment` microbiome input data.
 }
 \examples{
 

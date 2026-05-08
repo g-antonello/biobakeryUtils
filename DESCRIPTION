@@ -1,7 +1,7 @@
 Package: biobakeryUtils
 Type: Package
 Title: Manipulate and Analyze Data from the BioBakery Suite
-Version: 0.7.0
+Version: 0.8.0
 Authors@R: person("Giacomo", "Antonello",
                   email = "giacomoantonello1@gmail.com",
                   role = c("aut", "cre"))
@@ -28,6 +28,7 @@ Suggests:
     parkinsonsMetagenomicData,
     testthat (>= 3.0.0)
 License: MIT + file LICENSE
+LazyData: false
 Encoding: UTF-8
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0

@@ -44,15 +44,19 @@ alt_rowData <- S4Vectors::DataFrame(feature_type = rep("altFeature", 5))
 alt_se <- TreeSummarizedExperiment(assays = list(counts = alt_counts), rowData = alt_rowData, colData = alt_colData)
 
 altExp(tse, "altSubset") <- alt_se
-metadata(tse)$info <- "test_metadata"
+
+# add metadata
+metadata(tse) <- list("test_chr" = "test_metadata", "test_df" = mtcars)
   
   return(tse)
 }
 
 
-# DataFrameSpecs tests
+# --------------------- DataFrameSpecs tests ----------------------------------
 
 test_that("DataFrameSpecs returns correct structure", {
+  
+  # tests on coldata
   tse <- make_test_tse()
   specs <- DataFrameSpecs(colData(tse))
   
@@ -64,7 +68,7 @@ test_that("DataFrameSpecs returns correct structure", {
   expect_equal(cond_row$colClass, "factor")
   expect_true(all(c("trt", "control") %in% strsplit(cond_row$fctLevels, ";")[[1]]))
   
-  # same test but on rowData
+  # same test on rowData
   specs <- DataFrameSpecs(rowData(tse))
   
   expect_s3_class(specs, "data.frame")
@@ -75,8 +79,9 @@ test_that("DataFrameSpecs returns correct structure", {
   expect_equal(cond_row$colClass, "factor")
   expect_true(all(c("blue", "red") %in% strsplit(cond_row$fctLevels, ";")[[1]]))
 })
+# -----------------------------------------------------------------------------
 
-# test I/O of the _noAltExp() version of function
+# -------  test I/O of the _noAltExp() version of function  -------------------
 
 test_that("TSE round-trips without altExp", {
   tse <- make_test_tse()
@@ -91,6 +96,7 @@ test_that("TSE round-trips without altExp", {
   expect_true(file.exists(file.path(tmpDestDir, "rowData.tsv")))
   expect_true(file.exists(file.path(tmpDestDir, "rowTree.tre")))
   expect_true(file.exists(file.path(tmpDestDir, "colTree.tre")))
+  
   # expect that an altExp does not exist, because this is the _noAltExp type
   # of funciton
   expect_false(dir.exists(file.path(tmpDestDir, "altExps")))
@@ -120,6 +126,7 @@ test_that("TSE round-trips without altExp", {
   unlink(tmpDestDir, recursive = TRUE)
 })
 
+# -----------------------------------------------------------------------------
 
 # test full I/O functions (including AltExp)
 

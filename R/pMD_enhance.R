@@ -8,14 +8,9 @@
 #' Formats and adds pieces to select outputs of parkinsonsMetagenomicData
 #'
 #' @param input.tse \code{TreeSummarizedExperiment}. as it comes out of
-#' \code{loadMetagenomcData} or \code{returnSamples}
-#' @param sampleMetadata.df \code{data.frame}. A data.frame to swap the default 
-#' with. NB: it must have a `uuid` column with valid uuids
-#' \code{loadMetagenomcData} or \code{returnSamples}
-#' @param data_type \code{character}. that got retrieved using 
-#' \code{loadMetagenomcData} or \code{returnSamples}
-#' to the \code{TreeSummarizedExperiment}? Works only with MetaPhlAn input 
-#' (`data_type = "relative_abundance"`)
+#'  \code{loadMetagenomcData} or \code{returnSamples}
+#' @param data_type \code{character}. `data_type` parameter used in 
+#'  \code{returnSamples}
 #' 
 #' @returns \code{TreeSummarizedExperiment}
 #' 
@@ -25,64 +20,45 @@
 #'
 #' @examples
 #' 
-#' library(parkinsonsMetagenomicData)
-#' data("sampleMetadata", package = "parkinsonsMetagenomicData")
-#' 
-#' data_types <- c("relative_abundance", 
+#' suppressMessages(library(TreeSummarizedExperiment))
+#' data_types <- c("relative_abundance",
 #' "pathabundance_unstratified", "genefamilies_unstratified")
 #' 
-#' example_metadata.df <- sampleMetadata[grepl("Bedarf", 
-#' sampleMetadata$study_name),]
-#' 
 #' # MetaPhlAn
+#' data(Bedarf_pMD_raw_MetaPhlAn.tse)
 #' 
-#' tse_basic <- returnSamples(example_metadata.df, data_type = data_types[1])
-#' 
-#' tse_enhanced <- pMD_enhance(tse_basic, 
-#'   sampleMetadata.df = example_metadata.df, 
+#' tse_enhanced <- pMD_enhance(Bedarf_pMD_raw_MetaPhlAn.tse, 
 #'   data_type = data_types[1])
-#' 
+#'   
 #' # HUMAnN pathways
-#' tse_basic <- returnSamples(example_metadata.df, data_type = data_types[2])
+#' data(Bedarf_pMD_raw_HUMAnN_pwy.tse)
 #' 
-#' tse_enhanced <- pMD_enhance(tse_basic, 
-#'   sampleMetadata.df = example_metadata.df, 
+#' tse_enhanced <- pMD_enhance(Bedarf_pMD_raw_HUMAnN_pwy.tse, 
 #'   data_type = data_types[2])
+#'   
+#' # HUMAnN Gene Families - example takes too long, see example in 
+#' # `pMD_enhance_HUMAnN_genefam`
+#' # data(Bedarf_pMD_raw_HUMAnN_GeneFam.tse)
 #' 
-#' tse_basic <- returnSamples(example_metadata.df, data_type = data_types[3])
-#' 
-#' tse_enhanced <- pMD_enhance(tse_basic, 
-#'   sampleMetadata.df = example_metadata.df,
-#'   data_type = data_types[3])
-#' 
-#'
-
-pMD_enhance <- function(input.tse, sampleMetadata.df, data_type){
+#' # tse_enhanced <- pMD_enhance(Bedarf_pMD_raw_HUMAnN_GeneFam.tse, 
+#' #   data_type = data_types[3])
+pMD_enhance <- function(input.tse, data_type){
   if(!any(data_type %in% c("relative_abundance", "pathabundance_unstratified", "genefamilies_unstratified"))){
     warning(sprintf("%s is not yet supported, returning unmodified input", data_type))
     return(input.tse)
   } else{
     
-    # fix potential NAs that arise when parkinsonsMetagenomicData retrieves
-    # data and merges assays together
-    assay(input.tse)[is.na(assay(input.tse))] <- 0
-    
-    
-    # Fix cases of columns that contain tab character, replace '\t' with '  '
-    # as far as I know, only metaphlan headers have this issue
-    colData(input.tse) <- DataFrame(apply(colData(input.tse), 2, function(x) gsub("\t", "  ", x)))
-    
     # call specific function
     if(data_type == "relative_abundance"){
-      return(pMD_enhance_MetaPhlAn(input.tse, sampleMetadata.df))
+      return(pMD_enhance_MetaPhlAn(input.tse))
     }
     
     if(data_type == "pathabundance_unstratified"){
-      return(pMD_enhance_HUMAnN_pwy(input.tse, sampleMetadata.df))
+      return(pMD_enhance_HUMAnN_pwy(input.tse))
     }
     
     if(data_type == "genefamilies_unstratified"){
-      return(pMD_enhance_HUMAnN_genefam(input.tse, sampleMetadata.df))
+      return(pMD_enhance_HUMAnN_genefam(input.tse))
     }
   }
 }
@@ -92,43 +68,39 @@ pMD_enhance <- function(input.tse, sampleMetadata.df, data_type){
 #' Enhance MetaPhlAn data
 #'
 #' @param input.tse \code{TreeSummarizedExperiment}. as it comes out of 
-#' \code{loadMetagenomcData}
-#' or \code{returnSamples} and `data_type = 'relative_abundance'`
-#' @param sampleMetadata.df \code{data.frame}. A data.frame to swap the default 
-#' with. NB: it must have a `uuid` column with valid uuids
-#' to the \code{TreeSummarizedExperiment}? Works only with MetaPhlAn input 
-#' (`data_type = "relative_abundance"`)
+#' \code{loadMetagenomcData} or \code{returnSamples}. works exclusively for the
+#' \code{data_type = "relative_abundance"} case
 #' 
 #' @returns \code{TreeSummarizedExperiment}
 #' 
-#' @importFrom SummarizedExperiment rowData rowData<- colData colData<- 
-#' @importFrom SummarizedExperiment assayNames assay assay<- assays<- assays
-#' @importFrom S4Vectors metadata
+#' @importFrom SummarizedExperiment rowData colData assay assays assayNames
+#' @importFrom SummarizedExperiment rowData<- colData<- assay<- assays<- 
+#' @importFrom SummarizedExperiment assayNames<- 
+#' @importFrom S4Vectors metadata metadata<-
 #' 
 #' @export
 #'
 #' @examples
-#' 
-#' library(parkinsonsMetagenomicData)
-#' data("sampleMetadata", package = "parkinsonsMetagenomicData")
-#' data_types <- c("relative_abundance", 
+#' suppressMessages(library(TreeSummarizedExperiment))
+#' data_types <- c("relative_abundance",
 #' "pathabundance_unstratified", "genefamilies_unstratified")
 #' 
-#' example_metadata.df <- sampleMetadata[grepl("Bedarf", sampleMetadata$study_name),]
+#' data(Bedarf_pMD_raw_MetaPhlAn.tse)
 #' 
-#' data_types <- c("relative_abundance", 
-#' "pathabundance_unstratified", "genefamilies_unstratified")
+#' tse_enhanced <- pMD_enhance_MetaPhlAn(Bedarf_pMD_raw_MetaPhlAn.tse)
 #' 
-#' tse_basic <- returnSamples(example_metadata.df, data_type = data_types[1])
-#' 
-#' tse_enhanced <- pMD_enhance(tse_basic, 
-#'   sampleMetadata.df = example_metadata.df, 
-#'   data_type = data_types[1])
-#'
+#' tse_enhanced
 
-pMD_enhance_MetaPhlAn <- function(input.tse, sampleMetadata.df){
+pMD_enhance_MetaPhlAn <- function(input.tse){
   
-  data("all_taxonomy_levels")
+  # fix potential NAs that arise when parkinsonsMetagenomicData retrieves
+  # data and merges assays together
+  assay(input.tse)[is.na(assay(input.tse))] <- 0
+  
+  
+  # Fix cases of columns that contain tab character, replace '\t' with '  '
+  # as far as I know, only metaphlan headers have this issue
+  colData(input.tse) <- DataFrame(apply(colData(input.tse), 2, function(x) gsub("\t", "  ", x)))
   
   # filter input.tse to have only t__SGB level data, all columns of the Assay should sum to 100 at the 5th precision digit
   # first add the exception of UNCLASSIFIED, which should be added as it is to the lowest levels
@@ -176,37 +148,38 @@ pMD_enhance_MetaPhlAn <- function(input.tse, sampleMetadata.df){
 #' Enhance HUMAnN unstratified pathways data
 #'
 #' @param input.tse \code{TreeSummarizedExperiment}. as it comes out of 
-#' \code{loadMetagenomcData} or \code{returnSamples}. using 
-#' `data_type = "pathabundance_unstratified"`
-#' @param sampleMetadata.df \code{data.frame}. A data.frame to swap the default 
-#' with. NB: it must have a `uuid` column with valid uuids
+#' \code{loadMetagenomcData} or \code{returnSamples}. works exclusively for the
+#' \code{data_type = "pathabundance_unstratified"} case
 #' 
 #' @returns \code{TreeSummarizedExperiment}
 #' 
-#' @importFrom S4Vectors DataFrame
-#' @importFrom SummarizedExperiment rowData rowData<- assay
+#' @importFrom SummarizedExperiment rowData colData assay assays assayNames
+#' @importFrom SummarizedExperiment rowData<- colData<- assay<- assays<- 
+#' @importFrom SummarizedExperiment assayNames<- 
+#' @importFrom S4Vectors metadata metadata<-
 #' 
 #' @export
 #'
 #' @examples
-#' 
-#' library(parkinsonsMetagenomicData)
-#' data("sampleMetadata", package = "parkinsonsMetagenomicData")
-#' 
-#' data_types <- c("relative_abundance", 
+#' suppressMessages(library(TreeSummarizedExperiment))
+#' data_types <- c("relative_abundance",
 #' "pathabundance_unstratified", "genefamilies_unstratified")
 #' 
-#' example_metadata.df <- sampleMetadata[grepl("Bedarf", 
-#' sampleMetadata$study_name),]
+#' data(Bedarf_pMD_raw_HUMAnN_pwy.tse)
 #' 
-#' tse_basic <- returnSamples(example_metadata.df, data_type = data_types[2])
+#' tse_enhanced <- pMD_enhance_HUMAnN_pwy(Bedarf_pMD_raw_HUMAnN_pwy.tse)
 #' 
-#' tse_enhanced <- pMD_enhance(tse_basic, 
-#'   sampleMetadata.df = example_metadata.df, 
-#'   data_type = data_types[2])
-#'
+#' tse_enhanced
 
-pMD_enhance_HUMAnN_pwy <-function(input.tse, sampleMetadata.df){
+pMD_enhance_HUMAnN_pwy <-function(input.tse){
+  
+  # fix potential NAs that arise when parkinsonsMetagenomicData retrieves
+  # data and merges assays together
+  assay(input.tse)[is.na(assay(input.tse))] <- 0
+  
+  # Fix cases of columns that contain tab character, replace '\t' with '  '
+  # as far as I know, only metaphlan headers have this issue
+  colData(input.tse) <- DataFrame(apply(colData(input.tse), 2, function(x) gsub("\t", "  ", x)))
   
   # fix rowData and rownames a little
   new_rowData <- cbind.data.frame(rowData(input.tse)$pathway, do.call(rbind, strsplit(x = rowData(input.tse)$pathway, ": ", fixed = TRUE)))
@@ -230,37 +203,47 @@ pMD_enhance_HUMAnN_pwy <-function(input.tse, sampleMetadata.df){
 ################################################################################
 
 #' Enhance HUMAnN unstratified gene families data
-#'
+#' 
 #' @param input.tse \code{TreeSummarizedExperiment}. as it comes out of 
-#' \code{loadMetagenomcData} or \code{returnSamples}. using 
-#' `data_type = "genefamilies_unstratified"`
-#' @param sampleMetadata.df \code{data.frame}. A data.frame to swap the default 
-#' with. NB: it must have a `uuid` column with valid uuids
+#' \code{loadMetagenomcData} or \code{returnSamples}. works exclusively for the
+#' \code{data_type = "genefamilies_unstratified"} case
 #' 
 #' @returns \code{TreeSummarizedExperiment}
 #' 
-#' @importFrom SummarizedExperiment assay
+#' @importFrom SummarizedExperiment rowData colData assay assays assayNames
+#' @importFrom SummarizedExperiment rowData<- colData<- assay<- assays<- 
+#' @importFrom SummarizedExperiment assayNames<- 
+#' 
 #' @export
 #'
 #' @examples
+#' # this example takes a long time, but it's the problem of Gene Families:
+#' # They are too many.
 #' 
 #' library(parkinsonsMetagenomicData)
 #' data("sampleMetadata", package = "parkinsonsMetagenomicData")
 #' 
-#' data_types <- c("relative_abundance", 
-#' "pathabundance_unstratified", "genefamilies_unstratified")
-#'
-#' example_metadata.df <- sampleMetadata[grepl("Bedarf", 
-#' sampleMetadata$study_name),]
+#' data_types <- c("relative_abundance",
+#'                 "pathabundance_unstratified", "genefamilies_unstratified")
 #' 
-#' tse_basic <- returnSamples(example_metadata.df, data_type = data_types[3])
+#' example_metadata.df <- sampleMetadata[grepl("Bedarf",
+#'                                             sampleMetadata$study_name),]
 #' 
-#' tse_enhanced <- pMD_enhance(tse_basic, 
-#'   sampleMetadata.df = example_metadata.df, 
-#'   data_type = data_types[3])
-#'
+#' tmp.tse <- returnSamples(example_metadata.df, data_type = data_types[3])
+#' 
+#' Bedarf_pMD_raw_HUMAnN_GeneFam.tse <- pMD_enhance_HUMAnN_genefam(tmp.tse)
+#' 
+#' Bedarf_pMD_raw_HUMAnN_GeneFam.tse
 
-pMD_enhance_HUMAnN_genefam <-function(input.tse, sampleMetadata.df){
+pMD_enhance_HUMAnN_genefam <-function(input.tse){
+  
+  # fix potential NAs that arise when parkinsonsMetagenomicData retrieves
+  # data and merges assays together
+  assay(input.tse)[is.na(assay(input.tse))] <- 0
+  
+  # Fix cases of columns that contain tab character, replace '\t' with '  '
+  # as far as I know, only metaphlan headers have this issue
+  colData(input.tse) <- DataFrame(apply(colData(input.tse), 2, function(x) gsub("\t", "  ", x)))
   
   # re-derive transformations
   assay(input.tse, "relative_abundance") <- apply(assay(input.tse), 2, function(x) x/sum(x))

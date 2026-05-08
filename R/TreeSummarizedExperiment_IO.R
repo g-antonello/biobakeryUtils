@@ -155,7 +155,7 @@ write_TSE_to_dir_noAltExp <- function(tse, out.dir) {
   
   # ---- rowData ----------------------------------------------------------------
   rowData.df <- as.data.frame(rowData(tse)) 
-  rowData.df <- cbind(data.frame(rownames = rownames(rowData.df)), rowData.df)
+  rowData.df <- cbind(data.frame("rownames" = rownames(rowData.df)), rowData.df)
   
   data.table::fwrite(rowData.df, file = file.path(out.dir, "rowData.tsv"), sep = "\t")
   data.table::fwrite(
@@ -366,7 +366,8 @@ read_TSE_from_dir_noAltExp <- function(tse.dir) {
   names(colClasses_col) <- colData_specs$colName
   
   colData.df <- data.table::fread(
-    file.path(tse.dir, "colData.tsv"), sep = "\t", colClasses = colClasses_col
+    file.path(tse.dir, "colData.tsv"), sep = "\t", colClasses = colClasses_col, 
+    data.table = FALSE
   )
   colData.df <- .apply_specs(dt = colData.df, specs = colData_specs)
   rownames(colData.df) <- colData.df$rownames
@@ -380,7 +381,8 @@ read_TSE_from_dir_noAltExp <- function(tse.dir) {
   names(colClasses_row) <- rowData_specs$colName
   
   rowData.df <- data.table::fread(
-    file.path(tse.dir, "rowData.tsv"), sep = "\t", colClasses = colClasses_row
+    file.path(tse.dir, "rowData.tsv"), sep = "\t", colClasses = colClasses_row,
+    data.table = FALSE
   )
   rowData.df <- .apply_specs(rowData.df, rowData_specs)
   rownames(rowData.df) <- rowData.df$rownames
@@ -415,6 +417,7 @@ read_TSE_from_dir_noAltExp <- function(tse.dir) {
   assays <- lapply(files_assays, function(f) {
     tmp <- data.table::fread(f, data.table = FALSE)
     rownames(tmp) <- tmp$rownames
+    tmp$rownames <- NULL
       return(as.matrix(tmp))
   })
   names(assays) <- gsub("\\.tsv$", "", basename(files_assays))

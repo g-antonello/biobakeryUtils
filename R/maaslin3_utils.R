@@ -1,12 +1,26 @@
+#-------------------------------------------------------------------------
+# the taxonomies vector, as utility for maaslin3_utils
+all_taxonomy_levels <- c(
+  k__ = "Kingdom",
+  p__ = "Phylum",
+  c__ = "Class",
+  o__ = "Order",
+  f__ = "Family",
+  g__ = "Genus",
+  s__ = "Species",
+  t__ = "SGB"
+)
+#-------------------------------------------------------------------------
+
+
 #' Add taxonomy to maaslin3 results
 #' 
 #' This function adds taxonomies to raw maaslin3 results by using the original
-#' input `TreeSummarizedExperiment` microbiome input data. So far, it is designed
-#' to work only with MetaPhlAn4 output tables
+#' input `(Tree)SummarizedExperiment` microbiome input data.
 #'
 #' @param maaslin3_res \code{maaslin3 raw output list} after running the model.
 #' 
-#' @param input.tse The \code{TreeSummarizedExperiment} microbiome input data 
+#' @param input.tse The \code{(Tree)SummarizedExperiment} microbiome input data 
 #' used for modeling
 #' 
 #' @param taxLevel \code{character} specifying the taxonomic level. Default is 
@@ -53,10 +67,10 @@
 add_taxonomy_to_maaslin3 <- function(maaslin3_res, input.tse, taxLevel = "Guess"){
   
   # prepare maaslin3 data
-    results.list <- list(
-      abundance = maaslin3_res$fit_data_abundance$results,
-      prevalence = maaslin3_res$fit_data_prevalence$results
-    )
+  results.list <- list(
+    abundance = maaslin3_res$fit_data_abundance$results,
+    prevalence = maaslin3_res$fit_data_prevalence$results
+  )
 
   # if taxLevel is not explicitly stated, guess it
   if(taxLevel == "Guess"){
