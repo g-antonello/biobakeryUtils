@@ -2,7 +2,9 @@ make_test_tse <- function() {
 library(TreeSummarizedExperiment)
 data("tinyTree", package = "TreeSummarizedExperiment")
 set.seed(1234)
-
+rowTree <- tinyTree
+colTree <- tinyTree
+colTree$tip.label <- gsub("t", "C_", colTree$tip.label)
 # basic assay
 count.mat <- matrix(rpois(100, 50), nrow = 10)
 rownames(count.mat) <- tinyTree$tip.label
@@ -29,7 +31,8 @@ tse <- TreeSummarizedExperiment(
   assays = list(counts = count.mat),
   colData = sampC,
   rowData = rowData,
-  rowTree = tinyTree
+  rowTree = rowTree,
+  colTree = colTree
 )
 
 # add altExp
@@ -59,7 +62,7 @@ test_that("DataFrameSpecs returns correct structure", {
   # condition should be factor with correct levels
   cond_row <- specs[specs$colName == "condition", ]
   expect_equal(cond_row$colClass, "factor")
-  expect_true(all(c("trt", "control") %in% strsplit(cond_row$fctLevels, ", ")[[1]]))
+  expect_true(all(c("trt", "control") %in% strsplit(cond_row$fctLevels, ";")[[1]]))
   
   # same test but on rowData
   specs <- DataFrameSpecs(rowData(tse))
@@ -70,7 +73,7 @@ test_that("DataFrameSpecs returns correct structure", {
   # Feature_gr1 should be factor with correct levels
   cond_row <- specs[specs$colName == "Feature_gr1", ]
   expect_equal(cond_row$colClass, "factor")
-  expect_true(all(c("blue", "red") %in% strsplit(cond_row$fctLevels, ", ")[[1]]))
+  expect_true(all(c("blue", "red") %in% strsplit(cond_row$fctLevels, ";")[[1]]))
 })
 
 # test I/O of the _noAltExp() version of function
@@ -78,19 +81,21 @@ test_that("DataFrameSpecs returns correct structure", {
 test_that("TSE round-trips without altExp", {
   tse <- make_test_tse()
   
-  tmpDest <- file.path(tempdir(), "testTSE")
-  expect_error(write_TSE_to_dir_noAltExp(tse, tmpDest))
-  # create directory because the _noAltExp directory does not create it
-  dir.create(tmpDest)
-  write_TSE_to_dir_noAltExp(tse, tmpDest)
+  tmpDestDir <- "testOutDir"
+  unlink(tmpDestDir, recursive = TRUE)
+  write_TSE_to_dir_noAltExp(tse, out.dir = tmpDestDir)
+  expect_error(write_TSE_to_dir_noAltExp(tse, out.dir = tmpDestDir))  # shoot error if the target directory exists
   
-  expect_true(file.exists(file.path(tmpDest, "colData.tsv")))
-  expect_true(file.exists(file.path(tmpDest, "rowData.tsv")))
-  expect_true(file.exists(file.path(tmpDest, "rowTree.tre")))
-  expect_false(file.exists(file.path(tmpDest, "colTree.tre")))
-  expect_false(dir.exists(file.path(tmpDest, "altExps")))
+  # expect existence of the following data
+  expect_true(file.exists(file.path(tmpDestDir, "colData.tsv")))
+  expect_true(file.exists(file.path(tmpDestDir, "rowData.tsv")))
+  expect_true(file.exists(file.path(tmpDestDir, "rowTree.tre")))
+  expect_true(file.exists(file.path(tmpDestDir, "colTree.tre")))
+  # expect that an altExp does not exist, because this is the _noAltExp type
+  # of funciton
+  expect_false(dir.exists(file.path(tmpDestDir, "altExps")))
   
-  tse2 <- read_TSE_from_dir_noAltExp(tmpDest)
+  tse2 <- read_TSE_from_dir_noAltExp(tse.dir = tmpDestDir)
   
   # metadata, assays, row/col order preserved
   expect_equal(metadata(tse)$info, metadata(tse2)$info)
@@ -104,15 +109,15 @@ test_that("TSE round-trips without altExp", {
                levels(colData(tse2)$condition))
   
   # expect rowLinks to be different, but column by column being identical
-  expect_equal(rowLinks(tse2), rowLinks(tse2))
   expect_equal(rowLinks(tse), rowLinks(tse2))
-  expect_true(all.equal(rowLinks(tse2), rowLinks(tse2)))
+  expect_equal(rowLinks(tse), rowLinks(tse2))
+  expect_true(all.equal(rowLinks(tse), rowLinks(tse2)))
   
   # expect that AltExps are not saved
   expect_true(length(altExpNames(tse)) > 0 & length(altExpNames(tse2)) == 0)
   
   # clean up before next test
-  unlink(tmpDest, recursive = TRUE)
+  unlink(tmpDestDir, recursive = TRUE)
 })
 
 
@@ -123,10 +128,11 @@ test_that("TSE round-trips with altExp", {
   tmpDest <- file.path(tempdir(), "testTSE")
   write_TSE_to_dir(tse, tmpDest)
   
+  # expect existence of a bunch of essential files for building a TSE
   expect_true(file.exists(file.path(tmpDest, "colData.tsv")))
   expect_true(file.exists(file.path(tmpDest, "rowData.tsv")))
   expect_true(file.exists(file.path(tmpDest, "rowTree.tre")))
-  expect_false(file.exists(file.path(tmpDest, "colTree.tre")))
+  expect_true(file.exists(file.path(tmpDest, "colTree.tre")))
   # in contrast with the example above, now we expect a TRUE here below
   expect_true(dir.exists(file.path(tmpDest, "altExps")))
   
@@ -147,18 +153,26 @@ test_that("TSE round-trips with altExp", {
 
 test_that("write_TSE_to_dir detects existing directory", {
   tse <- make_test_tse()
-  tmpDest <- file.path(tempdir(), "testTSE")
   
-  # expect an error on the _noAltExp version of the code
+  tmpDest <- "testTSE"
+  
+  # expect no error on the _noAltExp version of the code for the first attempt
+  expect_no_error(write_TSE_to_dir_noAltExp(tse, tmpDest))
+  # error if writing is re-attempted 
   expect_error(write_TSE_to_dir_noAltExp(tse, tmpDest))
+  
+  unlink(tmpDest, recursive = TRUE)
   
   # expect no error on the full code
   expect_no_error(write_TSE_to_dir(tse, tmpDest))
+  # expect error if writing is re-attempted
+  expect_error(write_TSE_to_dir(tse, tmpDest))
   
   # expect an error if the directory already exists, 
   # even if it's empty
-  tmpDest2 <- file.path(tempdir(), "testTSE2")
-  expect_error(write_TSE_to_dir(tse, tmpDest))
+  tmpDest2 <- file.path("testTSE2")
+  dir.create(tmpDest2)
+  expect_error(write_TSE_to_dir(tse, tmpDest2))
   
   # clean up before next test
   unlink(tmpDest, recursive = TRUE)
@@ -180,3 +194,21 @@ test_that("Factors with unused levels are preserved", {
   expect_equal(levels(tse$condition), levels(tse2$condition))
 })
 
+test_that("colTree round-trips correctly", {
+  tse <- make_test_tse()
+  tmpDest <- file.path(tempdir(), "testTSE_colTree")
+  write_TSE_to_dir(tse, tmpDest)
+  tse2 <- read_TSE_from_dir(tmpDest)
+  expect_equal(colTree(tse)$tip.label, colTree(tse2)$tip.label)
+  unlink(tmpDest, recursive = TRUE)
+})
+
+test_that("multiple assays round-trip in correct order", {
+  tse <- make_test_tse()
+  assay(tse, "logcounts") <- log1p(assay(tse, "counts"))
+  tmpDest <- file.path(tempdir(), "testTSE_assays")
+  write_TSE_to_dir(tse, tmpDest)
+  tse2 <- read_TSE_from_dir(tmpDest)
+  expect_equal(assayNames(tse), assayNames(tse2))
+  unlink(tmpDest, recursive = TRUE)
+})

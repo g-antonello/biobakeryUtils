@@ -11,7 +11,7 @@ A character vector with 8 elements:
 }
 }
 \usage{
-all_taxonomy_levels
+data(all_taxonomy_levels)
 }
 \description{
 This vector contains taxonomies from Kingdom to SGB level. the vector is

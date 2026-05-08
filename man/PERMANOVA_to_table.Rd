@@ -7,13 +7,15 @@
 PERMANOVA_to_table(tse, name = "permanova")
 }
 \arguments{
-\item{tse}{\code{TreeSummarizedExperiment} object that has been already populated with `mia::addPERMANOVA`}
+\item{tse}{\code{TreeSummarizedExperiment} object that has been already 
+populated with `mia::addPERMANOVA`}
 
-\item{name}{\code{character} specifying the 'name' paramenter that was passed to `mia::addPERMANOVA`}
+\item{name}{\code{character} specifying the `name` paramenter that was passed 
+to `mia::addPERMANOVA` as name to store the test in the `metadata` slot}
 }
 \value{
-A \code{data.frame} with permanova and betadisper + permutest statistics
-ready to be reported or saved as tables.
+A \code{data.frame} with permanova and, if tested in addPERMANOVA, 
+betadisper + permutest statistics ready to be reported or saved as tables.
 }
 \description{
 A utility function that produces a data.frame with PERMANOVA and betadisper

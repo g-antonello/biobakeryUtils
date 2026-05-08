@@ -4,21 +4,20 @@
 \alias{pMD_enhance}
 \title{Enhance parkinsonsMetagenomicData output}
 \usage{
-pMD_enhance(input.tse, sampleMetadata.df, data_type, addPhyloTree = FALSE)
+pMD_enhance(input.tse, sampleMetadata.df, data_type)
 }
 \arguments{
-\item{input.tse}{\code{TreeSummarizedExperiment}. as it comes out of \code{loadMetagenomcData}
-or \code{returnSamples}}
+\item{input.tse}{\code{TreeSummarizedExperiment}. as it comes out of
+\code{loadMetagenomcData} or \code{returnSamples}}
 
 \item{sampleMetadata.df}{\code{data.frame}. A data.frame to swap the default 
 with. NB: it must have a `uuid` column with valid uuids
 \code{loadMetagenomcData} or \code{returnSamples}}
 
 \item{data_type}{\code{character}. that got retrieved using 
-\code{loadMetagenomcData} or \code{returnSamples}}
-
-\item{addPhyloTree}{\code{logical}. Should a phylogenetic `rowTree` be added 
-to the \code{TreeSummarizedExperiment}? Works only with MetaPhlAn input (`data_type = "relative_abundance"`)}
+\code{loadMetagenomcData} or \code{returnSamples}
+to the \code{TreeSummarizedExperiment}? Works only with MetaPhlAn input 
+(`data_type = "relative_abundance"`)}
 }
 \value{
 \code{TreeSummarizedExperiment}
@@ -27,31 +26,36 @@ to the \code{TreeSummarizedExperiment}? Works only with MetaPhlAn input (`data_t
 Formats and adds pieces to select outputs of parkinsonsMetagenomicData
 }
 \examples{
-\dontrun{
+
 library(parkinsonsMetagenomicData)
+data("sampleMetadata", package = "parkinsonsMetagenomicData")
 
-data_types <- c("relative_abundance", "pathabundance_unstratified", "genefamilies_unstratified")
+data_types <- c("relative_abundance", 
+"pathabundance_unstratified", "genefamilies_unstratified")
 
-hf_con <- accessParquetData(data_types = data_types)
-
-example_metadata.df <- dplyr::filter(sampleMetadata, grepl("Bedarf", study_name))
-
+example_metadata.df <- sampleMetadata[grepl("Bedarf", 
+sampleMetadata$study_name),]
 
 # MetaPhlAn
 
-tse_basic <- loadParquetData(con = hf_con, data_type = "relative_abundance", filter_values = list(uuid = example_metadata.df$uuid))
+tse_basic <- returnSamples(example_metadata.df, data_type = data_types[1])
 
-tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "relative_abundance", addPhyloTree = TRUE)
+tse_enhanced <- pMD_enhance(tse_basic, 
+  sampleMetadata.df = example_metadata.df, 
+  data_type = data_types[1])
 
 # HUMAnN pathways
-tse_basic <- loadParquetData(con = hf_con, data_type = "pathabundance_unstratified", filter_values = list(uuid = example_metadata.df$uuid))
+tse_basic <- returnSamples(example_metadata.df, data_type = data_types[2])
 
-tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "pathabundance_unstratified", addPhyloTree = TRUE)
+tse_enhanced <- pMD_enhance(tse_basic, 
+  sampleMetadata.df = example_metadata.df, 
+  data_type = data_types[2])
 
-# HUMAnN gene families
-tse_basic <- loadParquetData(con = hf_con, data_type = "genefamilies_unstratified", filter_values = list(uuid = example_metadata.df$uuid))
+tse_basic <- returnSamples(example_metadata.df, data_type = data_types[3])
 
-tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "genefamilies_unstratified", addPhyloTree = TRUE)
+tse_enhanced <- pMD_enhance(tse_basic, 
+  sampleMetadata.df = example_metadata.df,
+  data_type = data_types[3])
 
-}
+
 }

@@ -6,8 +6,8 @@
 #' @returns \code{data.frame} with one row per feature and some common useful 
 #' summary stats in columns
 #' 
-#' @importFrom tibble tibble rownames_to_column
 #' @importFrom SummarizedExperiment assay assayNames
+#' @importFrom stats median model.matrix
 #' 
 #' @export
 #'

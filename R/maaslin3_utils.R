@@ -16,7 +16,6 @@
 #' for the prevalence results, with taxonomy in the first columns and maaslin3 
 #' results following. Taxa not tested are also included for completeness.
 #' 
-#' @importFrom dplyr full_join arrange
 #' @importFrom SummarizedExperiment rowData
 #' 
 #' @export
@@ -28,7 +27,8 @@
 #' file = system.file("extdata",
 #'                    "WallenZD_2022_metaphlan3_profiles.tsv.bz2",
 #'                    package = "biobakeryUtils"),
-#' col.data = system.file("extdata", "WallenZD_2022_subjMetadata.tsv.bz2", package = "biobakeryUtils"))
+#' col.data = system.file("extdata", "WallenZD_2022_subjMetadata.tsv.bz2", 
+#'   package = "biobakeryUtils"))
 #'
 #' maaslin3_results_raw <- maaslin3(
 #'   input_data = WallenZD_2022.tse, 
@@ -42,7 +42,10 @@
 #'   verbosity = "ERROR" 
 #' )
 #' 
-#' maaslin3_with_taxonomy <- add_taxonomy_to_maaslin3(maaslin3_res = maaslin3_results_raw, input.tse = WallenZD_2022.tse, taxLevel = "Guess")
+#' maaslin3_with_taxonomy <- add_taxonomy_to_maaslin3(
+#'   maaslin3_res = maaslin3_results_raw, 
+#'   input.tse = WallenZD_2022.tse, 
+#'   taxLevel = "Guess")
 #' 
 #' head(maaslin3_with_taxonomy$abundance)
 
@@ -73,13 +76,8 @@ add_taxonomy_to_maaslin3 <- function(maaslin3_res, input.tse, taxLevel = "Guess"
     
   # merge results with taxonomy, keeping them split
   results_w_taxonomy.list <- lapply(results.list, function(x) {
-      
-      return(
-        arrange(
-          full_join(
-            taxonomy_info_subset, x, by = "feature"),
-          qval_individual)
-        )
+    data_merged <- merge(taxonomy_info_subset, x, by = "feature")
+    data_merged <- data_merged[order(data_merged[["qval_individual"]]),]
     }
     )
   
@@ -100,7 +98,7 @@ add_taxonomy_to_maaslin3 <- function(maaslin3_res, input.tse, taxLevel = "Guess"
 #' be written. No files are actually saved. this is to test if files are saved
 #' in the right location. Default is FALSE.
 #'  
-#' @importFrom readr write_tsv
+#' @importFrom data.table fwrite
 #' @returns NULL, nothing is returned. Files are save as 
 #' `all_results_w_taxonomy_abundance.tsv` and 
 #' `all_results_w_taxonomy_prevalence.tsv`
@@ -114,7 +112,8 @@ add_taxonomy_to_maaslin3 <- function(maaslin3_res, input.tse, taxLevel = "Guess"
 #' file = system.file("extdata",
 #'                    "WallenZD_2022_metaphlan3_profiles.tsv.bz2",
 #'                    package = "biobakeryUtils"),
-#' col.data = system.file("extdata", "WallenZD_2022_subjMetadata.tsv.bz2", package = "biobakeryUtils"))
+#' col.data = system.file("extdata", "WallenZD_2022_subjMetadata.tsv.bz2", 
+#' package = "biobakeryUtils"))
 #'
 #' maaslin3_results_raw <- maaslin3(
 #'   input_data = WallenZD_2022.tse, 
@@ -128,7 +127,10 @@ add_taxonomy_to_maaslin3 <- function(maaslin3_res, input.tse, taxLevel = "Guess"
 #'   verbosity = "ERROR" 
 #' )
 #' 
-#' maaslin3_with_taxonomy <- add_taxonomy_to_maaslin3(maaslin3_res = maaslin3_results_raw, input.tse = WallenZD_2022.tse, taxLevel = "Guess")
+#' maaslin3_with_taxonomy <- add_taxonomy_to_maaslin3(
+#'   maaslin3_res = maaslin3_results_raw, 
+#'   input.tse = WallenZD_2022.tse, 
+#'   taxLevel = "Guess")
 #' 
 #' head(maaslin3_with_taxonomy$abundance)
 #' head(maaslin3_with_taxonomy$prevalence)
@@ -143,7 +145,7 @@ write_maaslin3_curated_tables <- function(maaslin3_res_list, out.dir, dryRun = F
     paths[[testName]] <- file.path(out.dir, paste0("all_results_w_taxonomy_", testName, ".tsv"))
     
     if(!dryRun){
-      write_tsv(maaslin3_res_list[[testName]], file.path(out.dir, paste0("all_results_w_taxonomy_", testName, ".tsv")))
+      fwrite(maaslin3_res_list[[testName]], file = file.path(out.dir, paste0("all_results_w_taxonomy_", testName, ".tsv")), sep = "\t")
     }
   }
   

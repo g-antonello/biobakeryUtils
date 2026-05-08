@@ -32,7 +32,8 @@ WallenZD_2022.tse <- mia::importMetaPhlAn(
 file = system.file("extdata",
                    "WallenZD_2022_metaphlan3_profiles.tsv.bz2",
                    package = "biobakeryUtils"),
-col.data = system.file("extdata", "WallenZD_2022_subjMetadata.tsv.bz2", package = "biobakeryUtils"))
+col.data = system.file("extdata", "WallenZD_2022_subjMetadata.tsv.bz2", 
+  package = "biobakeryUtils"))
 
 maaslin3_results_raw <- maaslin3(
   input_data = WallenZD_2022.tse, 
@@ -46,7 +47,10 @@ maaslin3_results_raw <- maaslin3(
   verbosity = "ERROR" 
 )
 
-maaslin3_with_taxonomy <- add_taxonomy_to_maaslin3(maaslin3_res = maaslin3_results_raw, input.tse = WallenZD_2022.tse, taxLevel = "Guess")
+maaslin3_with_taxonomy <- add_taxonomy_to_maaslin3(
+  maaslin3_res = maaslin3_results_raw, 
+  input.tse = WallenZD_2022.tse, 
+  taxLevel = "Guess")
 
 head(maaslin3_with_taxonomy$abundance)
 }

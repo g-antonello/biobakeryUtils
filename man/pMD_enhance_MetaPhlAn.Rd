@@ -4,17 +4,17 @@
 \alias{pMD_enhance_MetaPhlAn}
 \title{Enhance MetaPhlAn data}
 \usage{
-pMD_enhance_MetaPhlAn(input.tse, sampleMetadata.df, addPhyloTree = TRUE)
+pMD_enhance_MetaPhlAn(input.tse, sampleMetadata.df)
 }
 \arguments{
-\item{input.tse}{\code{TreeSummarizedExperiment}. as it comes out of \code{loadMetagenomcData}
+\item{input.tse}{\code{TreeSummarizedExperiment}. as it comes out of 
+\code{loadMetagenomcData}
 or \code{returnSamples} and `data_type = 'relative_abundance'`}
 
 \item{sampleMetadata.df}{\code{data.frame}. A data.frame to swap the default 
-with. NB: it must have a `uuid` column with valid uuids}
-
-\item{addPhyloTree}{\code{logical}. Should a phylogenetic `rowTree` be added 
-to the \code{TreeSummarizedExperiment}? Works only with MetaPhlAn input (`data_type = "relative_abundance"`)}
+with. NB: it must have a `uuid` column with valid uuids
+to the \code{TreeSummarizedExperiment}? Works only with MetaPhlAn input 
+(`data_type = "relative_abundance"`)}
 }
 \value{
 \code{TreeSummarizedExperiment}
@@ -23,20 +23,21 @@ to the \code{TreeSummarizedExperiment}? Works only with MetaPhlAn input (`data_t
 Enhance MetaPhlAn data
 }
 \examples{
-\dontrun{
+
 library(parkinsonsMetagenomicData)
+data("sampleMetadata", package = "parkinsonsMetagenomicData")
+data_types <- c("relative_abundance", 
+"pathabundance_unstratified", "genefamilies_unstratified")
 
-data_types <- c("relative_abundance", "pathabundance_unstratified", "genefamilies_unstratified")
+example_metadata.df <- sampleMetadata[grepl("Bedarf", sampleMetadata$study_name),]
 
-hf_con <- accessParquetData(data_types = data_types)
+data_types <- c("relative_abundance", 
+"pathabundance_unstratified", "genefamilies_unstratified")
 
-example_metadata.df <- dplyr::filter(sampleMetadata, grepl("Bedarf", study_name))
+tse_basic <- returnSamples(example_metadata.df, data_type = data_types[1])
 
+tse_enhanced <- pMD_enhance(tse_basic, 
+  sampleMetadata.df = example_metadata.df, 
+  data_type = data_types[1])
 
-# MetaPhlAn
-
-tse_basic <- loadParquetData(con = hf_con, data_type = "relative_abundance", filter_values = list(uuid = example_metadata.df$uuid))
-
-tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "relative_abundance", addPhyloTree = TRUE)
-}
 }

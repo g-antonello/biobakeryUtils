@@ -3,17 +3,16 @@
 #' A utility function that produces a data.frame with PERMANOVA and betadisper
 #' statistics from a TreeSummarizedExperiment object
 #'
-#' @param tse \code{TreeSummarizedExperiment} object that has been already populated with `mia::addPERMANOVA`
-#' @param name \code{character} specifying the 'name' paramenter that was passed to `mia::addPERMANOVA`
-#'
-#' @importFrom broom tidy
-#' @importFrom dplyr rename left_join transmute
-#' @importFrom S4Vectors metadata
+#' @param tse \code{TreeSummarizedExperiment} object that has been already 
+#' populated with `mia::addPERMANOVA`
+#' @param name \code{character} specifying the `name` paramenter that was passed 
+#'to `mia::addPERMANOVA` as name to store the test in the `metadata` slot
 #' 
-#' @returns A \code{data.frame} with permanova and betadisper + permutest statistics
-#' ready to be reported or saved as tables.
-#'  
-#' @export
+#' @returns A \code{data.frame} with permanova and, if tested in addPERMANOVA, 
+#' betadisper + permutest statistics ready to be reported or saved as tables. 
+#'
+#' @importFrom S4Vectors metadata
+#' @export 
 #'
 #' @examples
 #' library(mia)
@@ -40,23 +39,33 @@
 
 
 PERMANOVA_to_table <- function(tse, name = "permanova") {
-  if (!all(names(metadata(tse)[[name]]) %in% c("permanova", "homogeneity"))) {
-    results_table.df <- tidy(metadata(tse)[[name]])
-  } else {
-    permanova.df <- suppressWarnings(tidy(metadata(tse)[[name]][["permanova"]]))
-    permanova.df <- rename(permanova.df, p.value_PERMANOVA = p.value)
-    
-    tmp <- as.data.frame(metadata(tse)[[name]][["homogeneity"]])
-    betadisper.df <- transmute(tmp,
-        term = rownames(tmp),
-        Tot.variance_betadisper = `Total variance`,
-        Expl.variance_betadisper = `Explained variance`,
-        p.value_betadisper = `Pr(>F)`
-      )
-    
-    results_table.df <- left_join(permanova.df, betadisper.df, by = "term")
-  }
   
-  return(results_table.df)
+    results_table.df <- as.data.frame(metadata(tse)[[name]])
+    
+    # case 1 - homogeneity was tested
+    if(any(grepl("homogeneity", colnames(results_table.df)))){
+      results_clean <- data.frame(
+        term = rownames(results_table.df),
+        df = results_table.df$permanova.Df,
+        SumOfSqs = results_table.df$permanova.SumOfSqs,
+        R2_stat = results_table.df$permanova.R2,
+        p.value_PERMANOVA = results_table.df$permanova.Pr..F.,
+        Tot.variance_betadisper = results_table.df$homogeneity.Total.variance,
+        Expl.variance_betadisper = results_table.df$homogeneity.Explained.variance,
+        p.value_betadisper = results_table.df$homogeneity.Pr..F.
+      )  
+      
+      # case 2, homogeneity was not tested
+    } else {
+      results_clean <- data.frame(
+        term = rownames(results_table.df),
+        df = results_table.df$permanova.Df,
+        SumOfSqs = results_table.df$permanova.SumOfSqs,
+        R2_stat = results_table.df$permanova.R2,
+        p.value_PERMANOVA = results_table.df$permanova.Pr..F.
+      )  
+    }
+    
+  return(results_clean)
   
 }

@@ -21,19 +21,20 @@ with. NB: it must have a `uuid` column with valid uuids}
 Enhance HUMAnN unstratified gene families data
 }
 \examples{
-\dontrun{
+
 library(parkinsonsMetagenomicData)
+data("sampleMetadata", package = "parkinsonsMetagenomicData")
 
-data_types <- c("relative_abundance", "pathabundance_unstratified", "genefamilies_unstratified")
+data_types <- c("relative_abundance", 
+"pathabundance_unstratified", "genefamilies_unstratified")
 
-hf_con <- accessParquetData(data_types = data_types)
+example_metadata.df <- sampleMetadata[grepl("Bedarf", 
+sampleMetadata$study_name),]
 
-example_metadata.df <- dplyr::filter(sampleMetadata, grepl("Bedarf", study_name))
+tse_basic <- returnSamples(example_metadata.df, data_type = data_types[3])
 
-# HUMAnN gene families
-tse_basic <- loadParquetData(con = hf_con, data_type = "genefamilies_unstratified", filter_values = list(uuid = example_metadata.df$uuid))
+tse_enhanced <- pMD_enhance(tse_basic, 
+  sampleMetadata.df = example_metadata.df, 
+  data_type = data_types[3])
 
-tse_enhanced <- pMD_enhance(tse_basic, sampleMetadata.df = example_metadata.df, data_type = "genefamilies_unstratified", addPhyloTree = TRUE)
-
-}
 }

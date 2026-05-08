@@ -5,3 +5,4 @@
 
 # ignore Mac's hidden cache
 *\.DS_Store
+.positai

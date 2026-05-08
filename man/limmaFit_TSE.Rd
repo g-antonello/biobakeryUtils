@@ -13,8 +13,9 @@ limmaFit_TSE(tse, assay.type, formula, coef, p.adj_method = "BH")
 
 \item{formula}{\code{formula}. Model to pass to `model.matrix` before lmFit}
 
-\item{coef}{\code{character}. the coefficient as seen in one of `limma$coef` 
-columns. This is not so generalizable yet}
+\item{coef}{\code{character}. the coefficient as seen in one of `limma$coef` columns names.}
+
+\item{p.adj_method}{\code{character} One of the methods allowed by `stats::p.adjust`}
 }
 \value{
 a \code{data.frame} with a lot of feature information along with 
@@ -28,10 +29,19 @@ expected to be a `abundance/relabundance` as clean as possible from either
 MetaPhlAn or HUMAnN.
 }
 \examples{
+library(mia)
 data(enterotype)
-enterotype <- transformAssay(enterotype, assay.type = "counts", method = "clr", pseudocount = TRUE)
-enterotype_noNAs <- enterotype[,!is.na(enterotype@colData$Enterotype) & !is.na(enterotype@colData$Age)]
-limmaResults <- limmaFit_TSE(enterotype_noNAs, assay.type = "clr", formula = ~ Enterotype + Age, coef = "Enterotype3")
+enterotype <- transformAssay(enterotype, 
+  assay.type = "counts", 
+  method = "clr", 
+  pseudocount = TRUE)
+
+no_NA_variables <- complete.cases(colData(enterotype)[,c("Enterotype","Age")])
+enterotype_noNAs <- enterotype[,no_NA_variables]
+limmaResults <- limmaFit_TSE(enterotype_noNAs, 
+  assay.type = "clr", 
+  formula = ~ Enterotype + Age, 
+  coef = "Enterotype3")
 
 str(limmaResults)
 }
