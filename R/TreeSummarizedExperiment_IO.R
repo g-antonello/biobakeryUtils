@@ -88,7 +88,7 @@ DataFrameSpecs <- function(df) {
 #'
 #' @importFrom data.table fwrite
 #' @importFrom jsonlite write_json
-#' @importFrom ape write.tree
+#' @importFrom treeio write.tree
 #' @importFrom S4Vectors metadata
 #' @importFrom TreeSummarizedExperiment rowTree colTree
 #' @importFrom SummarizedExperiment colData rowData assay assayNames
@@ -146,7 +146,7 @@ write_TSE_to_dir_noAltExp <- function(tse, out.dir) {
   colData.df <- as.data.frame(colData(tse))
   colData.df <- cbind(data.frame("rownames" = rownames(colData.df)), colData.df)
   
-  data.table::fwrite(colData.df, file = file.path(out.dir, "colData.tsv"), sep = "\t")
+  data.table::fwrite(colData.df, file = file.path(out.dir, "colData.tsv"), sep = "\t", na = "NA")
   data.table::fwrite(
     DataFrameSpecs(colData(tse)),
     file = file.path(out.dir, "colData_colSpecs.tsv"),
@@ -157,7 +157,7 @@ write_TSE_to_dir_noAltExp <- function(tse, out.dir) {
   rowData.df <- as.data.frame(rowData(tse)) 
   rowData.df <- cbind(data.frame("rownames" = rownames(rowData.df)), rowData.df)
   
-  data.table::fwrite(rowData.df, file = file.path(out.dir, "rowData.tsv"), sep = "\t")
+  data.table::fwrite(rowData.df, file = file.path(out.dir, "rowData.tsv"), sep = "\t", na = "NA")
   data.table::fwrite(
     DataFrameSpecs(rowData(tse)),
     file = file.path(out.dir, "rowData_colSpecs.tsv"),
@@ -187,11 +187,11 @@ write_TSE_to_dir_noAltExp <- function(tse, out.dir) {
   # ---- trees ------------------------------------------------------------------
   if (inherits(tse, "TreeSummarizedExperiment")) {
     if (!is.null(rowTree(tse))) {
-      ape::write.tree(rowTree(tse), file = file.path(out.dir, "rowTree.tre"))
+      treeio::write.tree(rowTree(tse), file = file.path(out.dir, "rowTree.tre"))
     }
     if (!is.null(colTree(tse))) {
       # Bug fix: was incorrectly writing rowTree(tse) for both files
-      ape::write.tree(colTree(tse), file = file.path(out.dir, "colTree.tre"))
+      treeio::write.tree(colTree(tse), file = file.path(out.dir, "colTree.tre"))
     }
   }
   
@@ -299,7 +299,7 @@ write_TSE_to_dir <- function(tse, out.dir) {
 #'   \code{write_TSE_to_dir_noAltExp} or \code{write_TSE_to_dir}.
 #'
 #' @importFrom data.table fread set
-#' @importFrom ape read.tree
+#' @importFrom treeio read.tree
 #' @importFrom jsonlite read_json
 #' @importFrom S4Vectors DataFrame
 #' @importFrom TreeSummarizedExperiment TreeSummarizedExperiment
@@ -426,17 +426,18 @@ read_TSE_from_dir_noAltExp <- function(tse.dir) {
   assays <- assays[assaysOrder]
   
   # ---- trees -----------------------------------------------------------------
-  .read_tree_safe <- function(path) {
-    if (!file.exists(path)) return(NULL)  # absent tree is normal — no message
+  .read_tree_safe <- function(tree.path) {
+    
+    if (!file.exists(tree.path)) return(NULL)  # absent tree is normal — no message
     tryCatch(
-      ape::read.tree(path),
+      treeio::read.tree(tree.path),
       error   = function(e) {
-        message("Tree file '", path, "' exists but could not be read: ", e$message,
+        message("Tree file '", tree.path, "' exists but could not be read: ", e$message,
                 "\nProceeding without this tree.")
         NULL
       },
       warning = function(w) {
-        message("Warning reading tree file '", path, "': ", w$message,
+        message("Warning reading tree file '", tree.path, "': ", w$message,
                 "\nProceeding without this tree.")
         NULL
       }

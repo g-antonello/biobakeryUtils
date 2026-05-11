@@ -1,56 +1,76 @@
 make_test_tse <- function() {
-library(TreeSummarizedExperiment)
-data("tinyTree", package = "TreeSummarizedExperiment")
-set.seed(1234)
-rowTree <- tinyTree
-colTree <- tinyTree
-colTree$tip.label <- gsub("t", "C_", colTree$tip.label)
-# basic assay
-count.mat <- matrix(rpois(100, 50), nrow = 10)
-rownames(count.mat) <- tinyTree$tip.label
-colnames(count.mat) <- paste0("C_", 1:10)
-
-# sample data
-sampC <- data.frame(
-  condition = factor(rep(c("control", "trt"), each = 5), 
-                     levels = c("trt", "control")),
-  gender = factor(sample(c("male", "female"), size = 10, replace = TRUE),
-                  levels = c("male", "female"))
-)
-rownames(sampC) <- colnames(count.mat)
-
-# create rowData
-rowData <- DataFrame(
-Feature_gr1 = factor(rep(c("blue", "red"), each = 5)),
-Feature_gr2 = rep(c(2,3,4,6,1), 2)
-)
-rownames(rowData) <- rownames(count.mat)
-
-# base tse
-tse <- TreeSummarizedExperiment(
-  assays = list(counts = count.mat),
-  colData = sampC,
-  rowData = rowData,
-  rowTree = rowTree,
-  colTree = colTree
-)
-
-# add altExp
-alt_colData <- sampC
-alt_colData$altTreat <- rep(0:1, 5)
-
-alt_counts <- count.mat[1:5, ]
-alt_rowData <- S4Vectors::DataFrame(feature_type = rep("altFeature", 5))
-alt_se <- TreeSummarizedExperiment(assays = list(counts = alt_counts), rowData = alt_rowData, colData = alt_colData)
-
-altExp(tse, "altSubset") <- alt_se
-
-# add metadata
-metadata(tse) <- list("test_chr" = "test_metadata", "test_df" = mtcars)
+  set.seed(1234)
+  suppressMessages(library(TreeSummarizedExperiment))
+  suppressMessages(library(treeio))
+  data("tinyTree", package = "TreeSummarizedExperiment")
+  #-------------------
+  # force tinyTree to have canonical ape/treeio elements order.
+  # When non-example trees are read, no errors are given because newick tree
+  # are read and stored in a canonical way. this one would fail some tests
+  tinyTree_backup <- tinyTree
+  canonical <- c("edge", "edge.length", "Nnode", "node.label", "tip.label")
+  presentNames <- canonical[canonical %in% names(tinyTree)]
+  restNames <- setdiff(names(tinyTree), presentNames)
+  tinyTree <- tinyTree[c(presentNames, restNames)]  # reorder in-place, preserves class
+  tinyTree <- structure(unclass(tinyTree)[c(presentNames, restNames)], class = "phylo")
+  attr(tinyTree, "order") <- "cladewise"
+  #-------------------
+  if (!all.equal(tinyTree_backup, tinyTree)){
+    stop("tree conversion not succesful while making example TSE object")
+  }
+  
+  rowTree <- tinyTree
+  colTree <- tinyTree
+  colTree$tip.label <- gsub("t", "C_", colTree$tip.label)
+  
+  # basic assay
+  count.mat <- matrix(rpois(100, 50), nrow = 10)
+  rownames(count.mat) <- tinyTree$tip.label
+  colnames(count.mat) <- paste0("C_", 1:10)
+  
+  # colData
+  sampC <- data.frame(
+    condition = factor(rep(c("control", "trt"), each = 5), levels = c("trt", "control")),
+    gender = factor(sample(
+      c("male", "female"), size = 10, replace = TRUE
+    ), levels = c("male", "female")),
+    case_withNAs = c(1.21, 0.87, 1.22, NA, 0.03, -0.11, -1.87, NA, 15, NA)
+  )
+  rownames(sampC) <- colnames(count.mat)
+  
+  # create rowData
+  rowData <- DataFrame(Feature_gr1 = factor(rep(c("blue", "red"), each = 5)),
+                       Feature_gr2 = rep(c(2, 3, 4, 6, 1), 2))
+  rownames(rowData) <- rownames(count.mat)
+  
+  # base tse
+  tse <- TreeSummarizedExperiment(
+    assays = list(counts = count.mat),
+    colData = sampC,
+    rowData = rowData,
+    rowTree = rowTree,
+    colTree = colTree
+  )
+  
+  # add altExp
+  alt_colData <- sampC
+  alt_colData$altTreat <- rep(0:1, 5)
+  
+  alt_counts <- count.mat[1:5, ]
+  alt_rowData <- S4Vectors::DataFrame(feature_type = rep("altFeature", 5))
+  alt_se <- TreeSummarizedExperiment(
+    assays = list(counts = alt_counts),
+    rowData = alt_rowData,
+    colData = alt_colData
+  )
+  
+  altExp(tse, "altSubset") <- alt_se
+  
+  # add metadata
+  metadata(tse) <- list("test_chr" = "test_metadata", "test_df" = mtcars)
   
   return(tse)
 }
-
 
 # --------------------- DataFrameSpecs tests ----------------------------------
 
@@ -122,6 +142,11 @@ test_that("TSE round-trips without altExp", {
   # expect that AltExps are not saved
   expect_true(length(altExpNames(tse)) > 0 & length(altExpNames(tse2)) == 0)
   
+  # last, and most important check, check if they are ultimately equal overall 
+  # but ignoring the altExps
+  altExp(tse) <- NULL
+  expect_equal(tse, tse2)
+  
   # clean up before next test
   unlink(tmpDestDir, recursive = TRUE)
 })
@@ -152,6 +177,10 @@ test_that("TSE round-trips with altExp", {
   
   # check metadata persisted
   expect_equal(metadata(tse)$info, metadata(tse2)$info)
+  
+  # last, and most important check, check if they are ultimately equal overall
+  expect_equal(tse, tse2)
+  
   # clean up before next test
   unlink(tmpDest, recursive = TRUE)
 })

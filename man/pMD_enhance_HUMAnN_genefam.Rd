@@ -21,18 +21,18 @@ Enhance HUMAnN unstratified gene families data
 # this example takes a long time, but it's the problem of Gene Families:
 # They are too many.
 
-library(parkinsonsMetagenomicData)
-data("sampleMetadata", package = "parkinsonsMetagenomicData")
+# library(parkinsonsMetagenomicData)
+# data("sampleMetadata", package = "parkinsonsMetagenomicData")
 
-data_types <- c("relative_abundance",
-                "pathabundance_unstratified", "genefamilies_unstratified")
+# data_types <- c("relative_abundance",
+#                "pathabundance_unstratified", "genefamilies_unstratified")
 
-example_metadata.df <- sampleMetadata[grepl("Bedarf",
-                                            sampleMetadata$study_name),]
+# example_metadata.df <- sampleMetadata[grepl("Bedarf",
+#                                             sampleMetadata$study_name),]
 
-tmp.tse <- returnSamples(example_metadata.df, data_type = data_types[3])
+# tmp.tse <- returnSamples(example_metadata.df, data_type = data_types[3])
 
-Bedarf_pMD_raw_HUMAnN_GeneFam.tse <- pMD_enhance_HUMAnN_genefam(tmp.tse)
+# Bedarf_pMD_raw_HUMAnN_GeneFam.tse <- pMD_enhance_HUMAnN_genefam(tmp.tse)
 
-Bedarf_pMD_raw_HUMAnN_GeneFam.tse
+# Bedarf_pMD_raw_HUMAnN_GeneFam.tse
 }

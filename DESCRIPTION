@@ -12,13 +12,13 @@ Description: A collection of utility functions for importing, formatting, and
 Depends:
     R (>= 4.5)
 Imports:
-    ape,
     limma,
     data.table (>= 1.15),
     jsonlite,
     S4Vectors,
     SummarizedExperiment,
     SingleCellExperiment,
+    treeio,
     TreeSummarizedExperiment
 Suggests:
     maaslin3,
