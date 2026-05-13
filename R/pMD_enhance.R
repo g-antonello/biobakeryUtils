@@ -125,7 +125,7 @@ pMD_enhance_MetaPhlAn <- function(input.tse){
   metadata(input.tse)$rowData_extraColumns <- extra_rowData
   
   # do some cleaning of useful metaphlan run data
-  input.tse@colData$number_reads <- as.integer(gsub("#([0-9]+).*", "\\1", input.tse@colData$reads_processed))
+  input.tse@colData$reads_processed <- as.integer(gsub("#([0-9]+).*", "\\1", input.tse@colData$reads_processed))
   input.tse@colData$db_version <- gsub("#", "", input.tse@colData$db_version, fixed = TRUE)
   
   # clean metaphlan command function
@@ -134,7 +134,7 @@ pMD_enhance_MetaPhlAn <- function(input.tse){
   # calculate and organize alternative useful assays
   assayNames(input.tse) <- "percent"
   assay(input.tse, "relative_abundance") <- assay(input.tse)/100
-  assay(input.tse, "counts") <- t(apply(assay(input.tse, "relative_abundance"), 1, function(x) x * input.tse@colData$number_reads))
+  assay(input.tse, "counts") <- sweep(assay(input.tse, "relative_abundance"),2, input.tse@colData$reads_processed, FUN =  "*")
   
   # reorder the assays so that relative abundance [0.1]
   # comes before the percent (default MetaPhlAn output)
