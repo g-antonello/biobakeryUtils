@@ -39,31 +39,36 @@
 
 
 PERMANOVA_to_table <- function(tse, name = "permanova") {
-  
-    results_table.df <- as.data.frame(metadata(tse)[[name]])
     
-    # case 1 - homogeneity was tested
-    if(any(grepl("homogeneity", colnames(results_table.df)))){
-      results_clean <- data.frame(
-        term = rownames(results_table.df),
-        df = results_table.df$permanova.Df,
-        SumOfSqs = results_table.df$permanova.SumOfSqs,
-        R2_stat = results_table.df$permanova.R2,
-        p.value_PERMANOVA = results_table.df$permanova.Pr..F.,
-        Tot.variance_betadisper = results_table.df$homogeneity.Total.variance,
-        Expl.variance_betadisper = results_table.df$homogeneity.Explained.variance,
-        p.value_betadisper = results_table.df$homogeneity.Pr..F.
-      )  
+    permanova_slot <- metadata(tse)[[name]]
+    
+    # get PERMANOVA data frame, this is always generated
+    permanova_res.df <- data.frame(
+      term = rownames(permanova_slot$permanova),
+      PERMANOVA_df = permanova_slot$permanova$Df,
+      PERMANOVA_SumOfSqs = permanova_slot$permanova$SumOfSqs,
+      PERMANOVA_R2 = permanova_slot$permanova$R2,
+      PERMANOVA_P = permanova_slot$permanova[["Pr(>F)"]])
       
-      # case 2, homogeneity was not tested
+    
+    if(any(grepl("homogeneity", names(permanova_slot)))){
+      # case 1 - homogeneity was tested
+        homogeneity_res.df <- 
+        data.frame(
+          term = rownames(permanova_slot$homogeneity),
+          HOMOGENEITY_P = permanova_slot$homogeneity$`Explained variance`,
+          HOMOGENEITY_TotVariance = permanova_slot$homogeneity$`Total variance`,
+          HOMOGENEITY_ExplVariance = permanova_slot$homogeneity$`Explained variance`
+        )
+        
+      results_clean <- merge(permanova_res.df, homogeneity_res.df, by = "term", all.x = TRUE)
+      # keep row order of permanova results
+      results_clean <- results_clean[match(permanova_res.df$term, results_clean$term),]
+      
+      
     } else {
-      results_clean <- data.frame(
-        term = rownames(results_table.df),
-        df = results_table.df$permanova.Df,
-        SumOfSqs = results_table.df$permanova.SumOfSqs,
-        R2_stat = results_table.df$permanova.R2,
-        p.value_PERMANOVA = results_table.df$permanova.Pr..F.
-      )  
+      # case 2, homogeneity was not tested
+      results_clean <- permanova_res.df
     }
     
   return(results_clean)
