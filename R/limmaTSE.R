@@ -90,9 +90,12 @@ limmaTSE <- function(tse,
   
   final_df <- merge(rowData_with_Stats.df, lmFit_table, by = "FeatureID")
   final_df$SE <- (final_df$CI.R - final_df$CI.L) / (1.96 * 2)
+  final_df$ExposureValue <- coef
+  
   # Reorganize columns
   final_df <- final_df[, c(
     colnames(rowData_with_Stats.df),
+    "ExposureValue",
     "logFC",
     "SE",
     "t",
@@ -104,6 +107,7 @@ limmaTSE <- function(tse,
   )]
   colnames(final_df) <- c(
     colnames(rowData_with_Stats.df),
+    "ExposureValue",
     "Beta",
     "SE",
     "t_stat",
@@ -111,12 +115,12 @@ limmaTSE <- function(tse,
     "CI.L",
     "CI.R",
     "P.Value",
-    paste0("P.Value.adj.", p.adj_method)
+    "P.Value.adj"
   )
   
   # remove merging column and reorder by increasing adjusted p-value
   final_df$FeatureID <- NULL
-  final_df <- final_df[order(final_df[[paste0("P.Value.adj.", p.adj_method)]]),]
+  final_df <- final_df[order(final_df[["P.Value.adj"]]),]
   
   return(final_df)
 }

@@ -19,7 +19,8 @@ Imports:
     SummarizedExperiment,
     SingleCellExperiment,
     treeio,
-    TreeSummarizedExperiment
+    TreeSummarizedExperiment,
+    Maaslin2
 Suggests:
     maaslin3,
     mia,
