@@ -8,12 +8,15 @@
 #' 
 #' @param tse \code{(Tree)SummarizedExperiment}. Input data with available rowData
 #' @param assay.type \code{character}. The assay to test with limma
+#' @param voom.transform \code{logical}. Should the data be transformed with the
+#' `limma::voom` method prior to fitting the data? Default is FALSE
 #' @param formula \code{formula}. Model to pass to `model.matrix` before lmFit
 #' @param coef \code{character}. the coefficient as seen in one of `limma$coef` columns names.
 #' @param p.adj_method \code{character} One of the methods allowed by `stats::p.adjust`
 #' 
 #' 
-#' @importFrom limma lmFit eBayes topTable
+#' @importFrom limma lmFit eBayes topTable voom
+#' @importFrom SummarizedExperiment rowData assayNames assay 
 #' 
 #' @returns a \code{data.frame} with a lot of feature information along with 
 #' limma's summary statistics
@@ -30,15 +33,17 @@
 #' 
 #' no_NA_variables <- complete.cases(colData(enterotype)[,c("Enterotype","Age")])
 #' enterotype_noNAs <- enterotype[,no_NA_variables]
-#' limmaResults <- limmaFit_TSE(enterotype_noNAs, 
-#'   assay.type = "clr", 
+#' limmaResults <- limmaTSE(enterotype_noNAs, 
+#'   assay.type = "counts",
+#'   voom.transform = TRUE,
 #'   formula = ~ Enterotype + Age, 
 #'   coef = "Enterotype3")
 #' 
 #' str(limmaResults)
 
-limmaFit_TSE <- function(tse,
-                         assay.type,
+limmaTSE <- function(tse,
+                         assay.type = "counts",
+                         voom.transform = FALSE,
                          formula,
                          coef,
                          p.adj_method = "BH") {
@@ -55,11 +60,16 @@ limmaFit_TSE <- function(tse,
   
   rowData_with_Stats.df <- merge(rowData.df, compositionalStats, by = "FeatureID")
   
-  # calculate limma model
-  
+  # create model matrix and masic expression matrix for limma
   modMtx <- model.matrix(formula, data = colData(tse))
+  exprMat <- assay(tse, assay.type)
   
-  lmFitBasic <- lmFit(assay(tse, assay.type), design = modMtx)
+  # calculate limma::voom transformation if required
+  if(voom.transform){
+    exprMat <- voom(exprMat, design = modMtx, lib.size = colSums(exprMat))
+  }
+  
+  lmFitBasic <- lmFit(exprMat, design = modMtx)
   lmFitBasic <- eBayes(lmFitBasic)
   
   if (!(coef %in% colnames(lmFitBasic$coefficients))) {
@@ -103,6 +113,10 @@ limmaFit_TSE <- function(tse,
     "P.Value",
     paste0("P.Value.adj.", p.adj_method)
   )
+  
+  # remove merging column and reorder by increasing adjusted p-value
+  final_df$FeatureID <- NULL
+  final_df <- final_df[order(final_df[[paste0("P.Value.adj.", p.adj_method)]]),]
   
   return(final_df)
 }
