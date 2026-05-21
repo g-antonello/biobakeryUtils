@@ -3,6 +3,20 @@
 # loadParquetData or returnSamples
 ###############################################################################
 
+# helper function to fix colData tab characters
+.fix_tab_chars <- function(tse){
+  cd <- colData(tse)
+  for(col in colnames(cd)){
+    if(is.character(cd[[col]])){
+      cd[[col]] <- gsub("\t", "  ", cd[[col]])
+    } else if(is.factor(cd[[col]])){
+      levels(cd[[col]]) <- gsub("\t", "  ", levels(cd[[col]]))
+    }
+  }
+  colData(tse) <- cd
+  return(tse)
+}
+
 #' Enhance parkinsonsMetagenomicData output
 #' 
 #' Formats and adds pieces to select outputs of parkinsonsMetagenomicData
@@ -100,7 +114,7 @@ pMD_enhance_MetaPhlAn <- function(input.tse){
   
   # Fix cases of columns that contain tab character, replace '\t' with '  '
   # as far as I know, only metaphlan headers have this issue
-  colData(input.tse) <- DataFrame(apply(colData(input.tse), 2, function(x) gsub("\t", "  ", x)))
+  input.tse <- .fix_tab_chars(input.tse)
   
   # filter input.tse to have only t__SGB level data, all columns of the Assay should sum to 100 at the 5th precision digit
   # first add the exception of UNCLASSIFIED, which should be added as it is to the lowest levels
@@ -179,7 +193,7 @@ pMD_enhance_HUMAnN_pwy <-function(input.tse){
   
   # Fix cases of columns that contain tab character, replace '\t' with '  '
   # as far as I know, only metaphlan headers have this issue
-  colData(input.tse) <- DataFrame(apply(colData(input.tse), 2, function(x) gsub("\t", "  ", x)))
+  input.tse <- .fix_tab_chars(input.tse)
   
   # fix rowData and rownames a little
   new_rowData <- cbind.data.frame(rowData(input.tse)$pathway, do.call(rbind, strsplit(x = rowData(input.tse)$pathway, ": ", fixed = TRUE)))
@@ -195,7 +209,6 @@ pMD_enhance_HUMAnN_pwy <-function(input.tse){
   
   # re-derive transformations
   assay(input.tse, "relative_abundance") <- apply(assay(input.tse), 2, function(x) x/sum(x))
-  assay(input.tse, "cpm") <- apply(assay(input.tse, "relative_abundance"), 2, function(x) x*10^6)
   
   return(input.tse)
 }
@@ -243,11 +256,10 @@ pMD_enhance_HUMAnN_genefam <-function(input.tse){
   
   # Fix cases of columns that contain tab character, replace '\t' with '  '
   # as far as I know, only metaphlan headers have this issue
-  colData(input.tse) <- DataFrame(apply(colData(input.tse), 2, function(x) gsub("\t", "  ", x)))
+  input.tse <- .fix_tab_chars(input.tse)
   
   # re-derive transformations
   assay(input.tse, "relative_abundance") <- apply(assay(input.tse), 2, function(x) x/sum(x))
-  assay(input.tse, "cpm") <- apply(assay(input.tse, "relative_abundance"), 2, function(x) x*10^6)
   
   return(input.tse)
 }
