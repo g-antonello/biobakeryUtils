@@ -1,7 +1,7 @@
 Package: biobakeryUtils
 Type: Package
 Title: Manipulate and Analyze Data from the BioBakery Suite
-Version: 0.8.0
+Version: 0.9.0
 Authors@R: person("Giacomo", "Antonello",
                   email = "giacomoantonello1@gmail.com",
                   role = c("aut", "cre"))
@@ -20,13 +20,18 @@ Imports:
     SingleCellExperiment,
     treeio,
     TreeSummarizedExperiment,
-    Maaslin2
+    Maaslin2,
+    metafor,
+    reshape2
 Suggests:
     maaslin3,
     mia,
     mediation,
     R.utils,
     parkinsonsMetagenomicData,
+    curatedMetagenomicData,
+    dplyr,
+    magrittr,
     testthat (>= 3.0.0)
 License: MIT + file LICENSE
 LazyData: false

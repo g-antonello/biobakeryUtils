@@ -7,8 +7,8 @@
 maaslin2TSE(
   tse,
   assay.type = "relative_abundance",
-  outdir = "~/tempdir",
-  outdir_delete = FALSE,
+  outdir = NULL,
+  outdir_delete = TRUE,
   min_abundance = 0,
   min_prevalence = 0.1,
   min_variance = 0,
@@ -31,16 +31,17 @@ maaslin2TSE(
 )
 }
 \arguments{
-\item{tse}{A `TreeSummarizedExperiment` object containing microbiome data.}
+\item{tse}{A `TreeSummarizedExperiment` or `SummarizedExperiment` object 
+containing biobakery-derived tabular data (MetaPhlAn, HUMAnN).}
 
 \item{assay.type}{Character string specifying the name of the assay to use 
 (default: "relative_abundance").}
 
 \item{outdir}{Character string specifying the output directory for temporary 
-MaAsLin2 files. Files are unlinked after execution (default: "~/tempdir").}
+MaAsLin2 files. Files are unlinked after execution (default: "output/maaslin2").}
 
 \item{outdir_delete}{\code{logical}. Should the output directory be deleted?
-default = FALSE}
+default = TRUE}
 
 \item{min_abundance}{Numeric. The minimum abundance threshold for filtering 
 features (default: 0.0).}

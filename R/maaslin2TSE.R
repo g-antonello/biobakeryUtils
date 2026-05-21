@@ -8,13 +8,14 @@
 #' formatted data frame containing the statistical results merged with 
 #' feature metadata and some per-feature statistics (rowData).
 #' 
-#' @param tse A `TreeSummarizedExperiment` object containing microbiome data.
+#' @param tse A `TreeSummarizedExperiment` or `SummarizedExperiment` object 
+#'   containing biobakery-derived tabular data (MetaPhlAn, HUMAnN).
 #' @param assay.type Character string specifying the name of the assay to use 
 #'   (default: "relative_abundance").
 #' @param outdir Character string specifying the output directory for temporary 
-#'   MaAsLin2 files. Files are unlinked after execution (default: "~/tempdir").
+#'   MaAsLin2 files. Files are unlinked after execution (default: "output/maaslin2").
 #' @param outdir_delete \code{logical}. Should the output directory be deleted?
-#'   default = FALSE
+#'   default = TRUE
 #' @param min_abundance Numeric. The minimum abundance threshold for filtering 
 #'   features (default: 0.0).
 #' @param min_prevalence Numeric. The minimum prevalence threshold for filtering 
@@ -54,7 +55,7 @@
 #'   alongside the feature metadata (`rowData`) and compositional statistics. 
 #'   Results are ordered by adjusted p-value.
 #' 
-#' @importFrom utils read.delim
+#' @importFrom utils read.delim capture.output
 #' @importFrom SummarizedExperiment colData rowData assay
 #' @importFrom Maaslin2 Maaslin2
 #' @export
@@ -77,8 +78,8 @@
 #' str(DA_results)
 maaslin2TSE <- function(tse, 
                         assay.type = "relative_abundance", 
-                        outdir = "~/tempdir", 
-                        outdir_delete = FALSE,
+                        outdir = NULL, 
+                        outdir_delete = TRUE,
                         min_abundance = 0.0,
                         min_prevalence = 0.1,
                         min_variance = 0.0,
@@ -99,6 +100,16 @@ maaslin2TSE <- function(tse,
                         save_models = FALSE,
                         reference = NULL){
   
+  # create outdir 
+  if(is.null(outdir)){
+    outdir <- tempdir()
+  }
+  
+  outdir <- file.path(outdir, "maaslin2_out")
+  
+  dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
+  
+  
   # 2. Extract and format feature data (Samples as rows, Features as columns)
   input_data.df <- as.data.frame(t(SummarizedExperiment::assay(tse, assay.type)))
   
@@ -110,16 +121,10 @@ maaslin2TSE <- function(tse,
     stop("You must specify at least one column from colData(tse) as 'fixed_effects'.")
   }
   
-  # 5. Create output directory safely
-  dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
-  
-  # 6. Execute Maaslin2 safely by sinking output to a file
-  {
-    null_con <- file(file.path(outdir, "maaslin2.txt"), open = "wt")
-    sink(null_con)
-    sink(null_con, type = "message")
+  # 5. Execute Maaslin2 safely by sinking output to a file
     
-    Maaslin2::Maaslin2(
+    captured_out <- capture.output(
+      Maaslin2::Maaslin2(
       input_data       = input_data.df,
       input_metadata   = input_metadata.df,
       output           = outdir,
@@ -142,22 +147,12 @@ maaslin2TSE <- function(tse,
       max_pngs         = max_pngs,
       save_scatter     = save_scatter,
       save_models      = save_models
-    )
-    
-    sink(type = "message")
-    sink()
-    close(null_con)
-  }
+    ))
   
   # 7. Load results and unlink everything else
   results_raw <- read.delim(file.path(outdir, "all_results.tsv"))
-  if(outdir_delete){
-  unlink(outdir, recursive = TRUE)
-  }
   
-  # 8. Format results better
-  
-  # Note: ensure getFeatureStats() is available in your namespace/package!
+  # 8. Format results better. getFeatureStats is exported in biobakeryUtils
   compositionalStats <- getFeatureStats(tse, assay.type)
   compositionalStats$feature <- rownames(compositionalStats)
   
@@ -189,6 +184,11 @@ maaslin2TSE <- function(tse,
   
   results_clean$feature <- NULL
   results_clean <- results_clean[order(results_clean$P.Value.adj),]
+  
+  # second to last step, delete directory if requested
+  if(outdir_delete){
+    unlink(outdir, recursive = TRUE)
+  }
   
   # 9. Return the clean results data frame
   return(results_clean)
