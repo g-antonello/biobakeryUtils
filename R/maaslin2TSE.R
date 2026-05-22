@@ -121,8 +121,6 @@ maaslin2TSE <- function(tse,
   
   # 5. Execute Maaslin2 safely by sinking output to a file
     
-  grDevices::pdf(nullfile()) # force graphics dump in non-interactive scenarios
-    captured_out <- capture.output(
       Maaslin2::Maaslin2(
       input_data       = input_data.df,
       input_metadata   = input_metadata.df,
@@ -146,8 +144,7 @@ maaslin2TSE <- function(tse,
       max_pngs         = max_pngs,
       save_scatter     = save_scatter,
       save_models      = save_models
-    ))
-    grDevices::dev.off() # end graphics dump
+    )
     
   # 6. Load results and unlink everything else
   results_raw <- read.delim(file.path(outdir, "all_results.tsv"))
