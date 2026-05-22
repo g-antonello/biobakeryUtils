@@ -105,8 +105,6 @@ maaslin2TSE <- function(tse,
     outdir <- tempdir()
   }
   
-  outdir <- file.path(outdir, "maaslin2_out")
-  
   dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
   
   
@@ -123,6 +121,7 @@ maaslin2TSE <- function(tse,
   
   # 5. Execute Maaslin2 safely by sinking output to a file
     
+  grDevices::pdf(nullfile()) # force graphics dump in non-interactive scenarios
     captured_out <- capture.output(
       Maaslin2::Maaslin2(
       input_data       = input_data.df,
@@ -148,28 +147,29 @@ maaslin2TSE <- function(tse,
       save_scatter     = save_scatter,
       save_models      = save_models
     ))
-  
-  # 7. Load results and unlink everything else
+    grDevices::dev.off() # end graphics dump
+    
+  # 6. Load results and unlink everything else
   results_raw <- read.delim(file.path(outdir, "all_results.tsv"))
   
-  # 8. Format results better. getFeatureStats is exported in biobakeryUtils
+  # 7. Format results better. getFeatureStats is exported in biobakeryUtils
   compositionalStats <- getFeatureStats(tse, assay.type)
   compositionalStats$feature <- rownames(compositionalStats)
   
-  # 8.0 - get rowData and relative compositional stats
+  # 7.1 - get rowData and relative compositional stats
   rowData.df <- as.data.frame(SummarizedExperiment::rowData(tse))
   rowData.df$feature <- rownames(rowData.df)
   rowData_with_stats.df <- merge(rowData.df, compositionalStats, by = "feature")
   
-  # 8.1 - merge rowData with results and fix columns with same name
+  # 7.2 - merge rowData with results and fix columns with same name
   results_with_rowadata <- merge(rowData_with_stats.df, results_raw, by = "feature")
   results_with_rowadata$N.y <- NULL
   colnames(results_with_rowadata)[which(colnames(results_with_rowadata) == "N.x")] <- "N" 
   
-  # 8.2 - filter results to include only metadata of interest
+  # 7.3 - filter results to include only metadata of interest
   results_with_rowadata_filt <- results_with_rowadata[results_with_rowadata$metadata %in% fixed_effects,]
   
-  # Build final dataframe using the FILTERED object, not the raw one
+  # 8 - Build final dataframe using the FILTERED object, not the raw one
   results_clean <- data.frame(
     results_with_rowadata_filt[, colnames(rowData_with_stats.df)],
     ExposureValue = paste0(results_with_rowadata_filt$metadata, results_with_rowadata_filt$value),
