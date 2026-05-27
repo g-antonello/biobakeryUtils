@@ -160,8 +160,8 @@ metaAnalyze <- function(res.df,
                         minStudies.n = 6,
                         p.adj_method = "BH") {
   
-  avail_methods <- c("REML", "DL", "PM", "EB")
-  avail_tests <- c("z", "knha")
+  avail_methods <- c("DL", "HE", "CO", "HS", "HSk", "SJ", "ML", "REML", "EB", "PM", "GENQ", "PMM", "GENQM", "FE")
+  avail_tests <- c("z", "knha", "t")
   FeatureID_indx <- which(colnames(res.df) == "N") - 1
   FeatureID <- colnames(res.df)[FeatureID_indx]
   
