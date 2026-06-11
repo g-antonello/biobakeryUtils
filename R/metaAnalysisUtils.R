@@ -211,6 +211,14 @@ metaAnalyze <- function(res.df,
   results_formatted_with_rowData <- results_formatted_with_rowData[, c(colnames(restOfrowData), setdiff(colnames(results_formatted), colnames(restOfrowData)))]
   # reorder by meta-analysis adjusted p-value
   results_formatted_with_rowData <- results_formatted_with_rowData[order(results_formatted_with_rowData$P.Value.adj), ]
+  
+  # make a beta matrix with study name as first column
+  beta.mtx_ok <- cbind.data.frame(rownames(beta.mtx_ok), beta.mtx_ok)
+  colnames(beta.mtx_ok)[1] <- "Dataset"
+  # make a se matrix with study name as first column
+  se.mtx_ok <- cbind.data.frame(rownames(se.mtx_ok), se.mtx_ok)
+  colnames(se.mtx_ok)[1] <- "Dataset"
+  
   return(
     list(
       "Beta_matrix" = beta.mtx_ok,
