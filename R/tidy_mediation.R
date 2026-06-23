@@ -20,14 +20,20 @@
 #' tidy_mediation(contcont)
 #' }
 tidy_mediation <- function(mediation.model){
-  med_summary <- summary(mediation.model)
-  results_df <- data.frame(
-    Effect = c("Average Causal Mediated Effect (ACME)", "Average Direct Effect (ADE)", "Total Effect", "Prop. Mediated"),
-    Estimate = c(med_summary$d.avg, med_summary$z.avg, med_summary$tau.coef, med_summary$n.avg),
-    CI_Lower_95 = c(med_summary$d.avg.ci[1], med_summary$z.avg.ci[1], med_summary$tau.ci[1], med_summary$n.avg.ci[1]),
-    CI_Upper_95 = c(med_summary$d.avg.ci[2], med_summary$z.avg.ci[2], med_summary$tau.ci[2], med_summary$n.avg.ci[2]),
-    P.value = c(med_summary$d.avg.p, med_summary$z.avg.p, med_summary$tau.p, med_summary$n.avg.p)
+  fields <- list(
+    list(label = "Average Causal Mediated Effect (ACME)", est = "d.avg", ci = "d.avg.ci", p = "d.avg.p"),
+    list(label = "Average Direct Effect (ADE)",           est = "z.avg", ci = "z.avg.ci", p = "z.avg.p"),
+    list(label = "Total Effect",                          est = "tau.coef", ci = "tau.ci", p = "tau.p"),
+    list(label = "Prop. Mediated",                        est = "n.avg", ci = "n.avg.ci", p = "n.avg.p")
   )
   
-  return(results_df)
+  return(
+    data.frame(
+    Effect      = vapply(fields, `[[`, character(1), "label"),
+    Estimate    = vapply(fields, \(f) mediation.model[[f$est]],    numeric(1)),
+    CI_Lower_95 = vapply(fields, \(f) mediation.model[[f$ci]][1], numeric(1)),
+    CI_Upper_95 = vapply(fields, \(f) mediation.model[[f$ci]][2], numeric(1)),
+    P.value     = vapply(fields, \(f) mediation.model[[f$p]],      numeric(1))
+  )
+  )
 }
