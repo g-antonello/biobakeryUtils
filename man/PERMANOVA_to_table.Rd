@@ -14,8 +14,23 @@ populated with `mia::addPERMANOVA`}
 to `mia::addPERMANOVA` as name to store the test in the `metadata` slot}
 }
 \value{
-A \code{data.frame} with permanova and, if tested in addPERMANOVA, 
-betadisper + permutest statistics ready to be reported or saved as tables.
+Depends on the \code{homogeneity.test} used in
+\code{mia::addPERMANOVA}:
+\itemize{
+  \item no homogeneity test (\code{test.homogeneity = FALSE}): a
+  \code{data.frame} with the PERMANOVA statistics, one row per term.
+  \item \code{"permanova"} (default) or \code{"anova"}: the same
+  \code{data.frame}, with \code{HOMOGENEITY_P},
+  \code{HOMOGENEITY_TotVariance} and \code{HOMOGENEITY_ExplVariance}
+  added for each term that was tested for homogeneity (\code{NA} otherwise).
+  \item \code{"tukeyhsd"}: a \code{list} with \code{permanova} (the
+  PERMANOVA \code{data.frame}) and \code{homogeneity_pairwise}, a
+  \code{data.frame} of pairwise group comparisons (\code{comparison},
+  \code{diff}, \code{lwr}, \code{upr}, \code{p_adj}). Tukey HSD has no
+  single test per term, so it cannot be merged into the PERMANOVA table.
+  If several variables were tested, their comparisons are stacked and the
+  variable is not recorded by \code{mia}.
+}
 }
 \description{
 A utility function that produces a data.frame with PERMANOVA and betadisper
